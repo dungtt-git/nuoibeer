@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Lịch thi đấu World Cup 2026{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+    <div>
+      <h1 class="fw-bold mb-1">📅 Lịch thi đấu World Cup 2026</h1>
+      <p class="text-muted mb-0">
+        Dữ liệu nhập tay từ <code>data/fixtures.json</code>. Khi có tỷ số, trang này sẽ tự hiển thị kết quả.
+      </p>
+    </div>
+
+    <span class="badge bg-primary fs-6 mt-3 mt-md-0">
+      {{ fixtures|length }} trận
+    </span>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+
+          <thead class="table-dark">
+            <tr>
+              <th>Trận</th>
+              <th>Ngày</th>
+              <th>Giờ VN</th>
+              <th>Vòng</th>
+              <th>Bảng</th>
+              <th class="text-end">Đội 1</th>
+              <th class="text-center">Tỷ số</th>
+              <th>Đội 2</th>
+              <th>Sân</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for match in fixtures %}
+            <tr>
+              <td class="fw-bold">#{{ match.match_no }}</td>
+              <td>{{ match.date }}</td>
+
+              <td>
+                {% if match.time_vn %}
+                  <span class="badge bg-success">{{ match.time_vn }}</span>
+                {% else %}
+                  <span class="text-muted">Cập nhật</span>
+                {% endif %}
+              </td>
+
+              <td>{{ match.stage }}</td>
+
+              <td>
+                {% if match.group %}
+                  <span class="badge bg-secondary">Bảng {{ match.group }}</span>
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+
+              <td class="fw-semibold text-end">{{ match.home }}</td>
+
+              <td class="text-center">
+                {% if match.score_home is not none and match.score_away is not none %}
+                  <span class="badge bg-danger fs-6">
+                    {{ match.score_home }} - {{ match.score_away }}
+                  </span>
+                {% else %}
+                  <span class="text-muted">vs</span>
+                {% endif %}
+              </td>
+
+              <td class="fw-semibold">{{ match.away }}</td>
+              <td class="text-muted">{{ match.stadium }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="alert alert-info mt-4">
+    Sau khi nhập tỷ số vào <code>data/fixtures.json</code>, chạy:
+    <code>python scripts/update_groups_from_fixtures.py</code>
+    rồi tải lại trang bảng xếp hạng.
+  </div>
+
+</div>
+
+{% endblock %}

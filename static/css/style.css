@@ -1,0 +1,19 @@
+body {
+    background: #f5f7fa;
+}
+
+.table th {
+    white-space: nowrap;
+}
+
+.table td {
+    white-space: nowrap;
+}
+
+.card {
+    border-radius: 16px;
+}
+
+.badge {
+    border-radius: 999px;
+}

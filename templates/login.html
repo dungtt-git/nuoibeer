@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 500px;">
+    <h1>Đăng nhập</h1>
+
+    <form method="post">
+        <input class="form-control mb-3" name="username" placeholder="Tên đăng nhập" required>
+        <input class="form-control mb-3" name="password" type="password" placeholder="Mật khẩu" required>
+
+        <button class="btn btn-success w-100">
+            Đăng nhập
+        </button>
+    </form>
+
+    <p class="mt-3">
+        Chưa có tài khoản?
+        <a href="/register">Đăng ký</a>
+    </p>
+</div>
+{% endblock %}

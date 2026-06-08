@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}World Cup 2026{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <div class="text-center mb-5">
+        <h1 class="display-3 fw-bold">
+            🏆 World Cup 2026
+        </h1>
+
+        <p class="lead text-muted">
+            Theo dõi bảng xếp hạng, lịch thi đấu và dự đoán World Cup 2026
+        </p>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+
+                    <div class="fs-1 mb-3">📊</div>
+
+                    <h3>Bảng xếp hạng</h3>
+
+                    <p class="text-muted">
+                        Xem vị trí các đội theo từng bảng đấu.
+                    </p>
+
+                    <a href="/bang-xep-hang"
+                       class="btn btn-primary">
+                        Xem ngay
+                    </a>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+
+                    <div class="fs-1 mb-3">📅</div>
+
+                    <h3>Lịch thi đấu</h3>
+
+                    <p class="text-muted">
+                        Toàn bộ lịch thi đấu World Cup 2026.
+                    </p>
+
+                    <a href="/lich-thi-dau"
+                       class="btn btn-success">
+                        Xem lịch
+                    </a>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+
+                    <div class="fs-1 mb-3">🔮</div>
+
+                    <h3>Dự đoán</h3>
+
+                    <p class="text-muted">
+                        Dự đoán đội vô địch và tỷ lệ đi tiếp.
+                    </p>
+
+                    <a href="/du-doan"
+                       class="btn btn-warning">
+                        Dự đoán
+                    </a>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
