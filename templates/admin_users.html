@@ -78,6 +78,23 @@
                   {% endif %}
 
                 </form>
+                <form
+                  method="post"
+                  action="/admin/users/{{ user.id }}/reset-password"
+                  class="d-inline-flex gap-1 mt-1">
+
+                  <input
+                    type="text"
+                    name="new_password"
+                    class="form-control form-control-sm"
+                    placeholder="Mật khẩu mới"
+                    style="width: 130px;"
+                    required>
+
+                  <button class="btn btn-sm btn-outline-primary rounded-pill">
+                    Reset
+                  </button>
+                </form>
 
                 <form method="post"
                       action="/admin/users/{{ user.id }}/delete"

@@ -548,9 +548,9 @@ def home():
 
     leaderboard = sorted(
         summary_list,
-        key=lambda item: (item["accuracy"], item["correct"], -item["total_beer"]),
+        key=lambda item: item["total_beer"],
         reverse=True
-    )[:5]
+    )[:3]
 
     stats["grand_total"] = grand_total
 
@@ -587,7 +587,32 @@ def register():
 
     return render_template("register.html")
 
+@app.route("/admin/users/<int:user_id>/reset-password", methods=["POST"])
+def reset_user_password(user_id):
+    if not admin_required():
+        return redirect("/login")
 
+    new_password = request.form.get("new_password", "").strip()
+
+    if not new_password:
+        return redirect("/admin/users")
+
+    conn = get_db()
+
+    conn.execute("""
+        UPDATE users
+        SET password = ?
+        WHERE id = ?
+    """, (
+        generate_password_hash(new_password),
+        user_id
+    ))
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/admin/users")
+    
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":

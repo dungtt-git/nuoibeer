@@ -98,36 +98,65 @@
     </div>
 
     <div class="col-lg-4">
-      <div class="card border-0 shadow rounded-3 overflow-hidden">
-        <div class="card-header text-white fw-bold py-2 px-3 small bg-gradient-mini" style="letter-spacing: 0.5px;">
-          🏆 TOP ANH EM CỐNG HIẾN
-        </div>
-        <div class="card-body p-0">
-          {% for item in leaderboard %}
-            <div class="d-flex justify-content-between align-items-center border-bottom py-2 px-3 row-mini-bxh">
-              <div class="d-flex align-items-center gap-2">
-                <div class="fw-bold" style="width: 25px;">
-                  {% if loop.index == 1 %}🥇
-                  {% elif loop.index == 2 %}🥈
-                  {% elif loop.index == 3 %}🥉
-                  {% else %}<span class="text-muted small ps-1">{{ loop.index }}</span>
-                  {% endif %}
-                </div>
-                <div>
-                  <div class="fw-bold text-dark small" style="font-size: 0.85rem;">{{ item.username }}</div>
-                  <div class="text-muted" style="font-size: 0.72rem; font-weight: 500;">
-                    Đúng {{ item.correct }} / Sai {{ item.wrong }}
-                  </div>
-                </div>
-              </div>
-              <span class="badge bg-success fw-bold shadow-sm" style="font-size: 0.72rem; padding: 0.35em 0.55em;">{{ item.accuracy }}%</span>
+  <div class="card border-0 shadow rounded-3 overflow-hidden">
+    <div class="card-header text-white fw-bold py-2 px-3 small bg-gradient-mini"
+         style="letter-spacing: 0.5px;">
+      🍺 TOP NHÀ TÀI TRỢ
+    </div>
+
+    <div class="card-body p-0">
+
+      {% for item in leaderboard %}
+      <div class="d-flex justify-content-between align-items-center border-bottom py-2 px-3 row-mini-bxh">
+
+        <div class="d-flex align-items-center gap-2">
+
+          <div class="fw-bold" style="width:25px;">
+            {% if loop.index == 1 %}
+              🥇
+            {% elif loop.index == 2 %}
+              🥈
+            {% elif loop.index == 3 %}
+              🥉
+            {% endif %}
+          </div>
+
+          <div>
+            <div class="fw-bold text-dark small">
+              {{ item.username }}
             </div>
-          {% else %}
-            <div class="text-center text-muted py-4 small fw-medium">Chưa có dữ liệu thống kê.</div>
-          {% endfor %}
+
+            <div class="text-muted"
+                 style="font-size:0.72rem;">
+
+              Đúng {{ item.correct }}
+              · Sai {{ item.wrong }}
+              {% if item.push %}
+                · Hòa kèo {{ item.push }}
+              {% endif %}
+
+            </div>
+          </div>
+
         </div>
+
+        <span class="badge bg-warning text-dark fw-bold shadow-sm"
+              style="font-size:0.75rem;">
+          🍺 {{ item.total_beer }}
+        </span>
+
+      </div>
+      {% else %}
+
+      <div class="text-center text-muted py-4 small fw-medium">
+        Chưa có dữ liệu thống kê.
+      </div>
+
+      {% endfor %}
+
       </div>
     </div>
+  </div>
   </div>
 
 </div>
