@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Lịch sử dự đoán{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+
+  <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+    <div>
+      <h1 class="fw-bold mb-1">📜 Lịch sử dự đoán</h1>
+      <p class="text-muted mb-0">
+        Lịch sử được tính theo kèo chấp bàn thắng.
+      </p>
+    </div>
+
+    <a href="/du-doan" class="btn btn-outline-primary rounded-pill px-4">
+      🔮 Quay lại dự đoán
+    </a>
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body">
+      <div class="text-muted small mb-1">Tổng tiền phạt</div>
+      <div class="display-6 fw-bold text-danger">
+        {{ "{:,.0f}".format(total_fine) }} VND
+      </div>
+      <div class="small text-muted mt-2">
+        Mỗi dự đoán sai kèo tính 10.000 VND. Hòa kèo không phạt.
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0 history-table">
+        <thead class="table-light">
+          <tr>
+            <th class="text-center">Trận</th>
+            <th>Cặp đấu</th>
+            <th>Kèo</th>
+            <th>Dự đoán</th>
+            <th class="text-center">Tỷ số thật</th>
+            <th class="text-center">Trạng thái</th>
+            <th class="text-end">Tiền phạt</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for item in history %}
+          <tr>
+            <td class="text-center">
+              <span class="badge rounded-pill text-bg-light border">#{{ item.match.match_no }}</span>
+            </td>
+
+            <td class="fw-semibold">
+              {{ item.match.home }}
+              <span class="text-muted fw-normal">vs</span>
+              {{ item.match.away }}
+            </td>
+
+            <td>
+              <span class="badge text-bg-warning">{{ item.match.handicap_text }}</span>
+            </td>
+
+            <td>
+              {% if item.prediction == "home" %}
+                {{ item.match.home }} thắng kèo
+              {% elif item.prediction == "away" %}
+                {{ item.match.away }} thắng kèo
+              {% endif %}
+            </td>
+
+            <td class="text-center">
+              {% if item.handicap_result %}
+                <span class="badge text-bg-dark">
+                  {{ item.match.score_home }} - {{ item.match.score_away }}
+                </span>
+              {% else %}
+                <span class="text-muted small">Chưa đá</span>
+              {% endif %}
+            </td>
+
+            <td class="text-center">
+              {% if item.status == "Đúng" %}
+                <span class="badge rounded-pill text-bg-success px-3">Đúng</span>
+              {% elif item.status == "Sai" %}
+                <span class="badge rounded-pill text-bg-danger px-3">Sai</span>
+              {% elif item.status == "Hòa kèo" %}
+                <span class="badge rounded-pill text-bg-info px-3">Hòa kèo</span>
+              {% else %}
+                <span class="badge rounded-pill text-bg-secondary px-3">Chưa có kết quả</span>
+              {% endif %}
+            </td>
+
+            <td class="text-end fw-semibold">
+              {% if item.fine > 0 %}
+                <span class="text-danger">{{ "{:,.0f}".format(item.fine) }} VND</span>
+              {% else %}
+                <span class="text-muted">0 VND</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-5">
+              Chưa có dự đoán nào.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<style>
+  .history-table th {
+    font-size: 0.85rem;
+    color: #6c757d;
+    white-space: nowrap;
+  }
+
+  .history-table td {
+    padding-top: 0.9rem;
+    padding-bottom: 0.9rem;
+    white-space: nowrap;
+  }
+</style>
+
+{% endblock %}

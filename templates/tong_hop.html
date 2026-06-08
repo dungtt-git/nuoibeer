@@ -1,90 +1,89 @@
 {% extends "base.html" %}
 
-{% block title %}Tổng hợp tiền phạt{% endblock %}
+{% block title %}Tổng hợp 🍺{% endblock %}
 
 {% block content %}
 
-<div class="container py-5">
+<div class="container-fluid py-3 px-3" style="max-width: 1400px; margin: 0 auto;">
 
-  <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3 p-3 rounded-3" style="background: linear-gradient(135deg, #fee2e2 0%, #f5f3ff 100%); border-left: 5px solid #dc2626;">
     <div>
-      <h1 class="fw-bold mb-1">💰 Tổng hợp theo người chơi</h1>
-      <p class="text-muted mb-0">
-        Thống kê dự đoán đúng/sai và tổng tiền phạt của từng người.
+      <h2 class="fw-bold mb-0 text-dark" style="font-size: 1.6rem; letter-spacing: -0.5px;">💰 TỔNG HỢP QUỸ BIA</h2>
+      <p class="text-muted mb-0 small fw-medium">
+        Thống kê chi tiết số trận dự đoán đúng/sai và tổng 🍺 của từng người chơi.
       </p>
     </div>
 
-    <a href="/du-doan" class="btn btn-outline-primary rounded-pill px-4">
+    <a href="/du-doan" class="btn btn-sm btn-gradient-primary rounded-pill px-4 align-self-start align-self-sm-center fw-bold text-white shadow-sm">
       🔮 Quay lại dự đoán
     </a>
   </div>
 
-  <div class="row g-3 mb-4">
-    <div class="col-md-6 col-xl-4">
-      <div class="card border-0 shadow-sm rounded-4">
-        <div class="card-body">
-          <div class="text-muted small mb-1">Tổng tiền phạt tất cả người chơi</div>
-          <div class="display-6 fw-bold text-danger">
-            {{ "{:,.0f}".format(grand_total) }} VND
-          </div>
-          <div class="small text-muted mt-2">
-            Mỗi dự đoán sai tính 10.000 VND.
-          </div>
+  <div class="card border-0 shadow rounded-3 mb-3 text-white overflow-hidden" style="background: linear-gradient(135deg, #991b1b 0%, #4c1d95 100%);">
+    <div class="card-body p-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+      <div>
+        <div class="text-white-50 fw-bold uppercase tracking-wider small" style="font-size: 0.72rem; letter-spacing: 0.5px;">🍻 TỔNG GIÁ TRỊ QUỸ BIA TOÀN GIẢI</div>
+        <div class="display-6 fw-extrabold my-1" style="font-size: 2.2rem; letter-spacing: -1px; color: #fde047;">
+          {{ "{:,.0f}".format(total_beer) }} 🍺
+        </div>
+        <div class="small text-white-50 fw-medium" style="font-size: 0.75rem;">
+          Mỗi dự đoán sai kèo tính 10🍺.
         </div>
       </div>
+      <div class="fs-1 opacity-25 d-none d-sm-block pe-2">🍺</div>
     </div>
   </div>
 
-  <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+  <div class="card border-0 shadow rounded-3 overflow-hidden">
+    <div class="card-header bg-gradient-summary py-2 px-3">
+      <div class="fw-bold text-white small" style="letter-spacing: 0.5px;">📊 BẢNG KÊ SỐ LIỆU ĐỐI SOÁT THEO THÀNH VIÊN</div>
+    </div>
+
     <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
+      <table class="table table-hover align-middle mb-0 summary-table">
+        <thead>
           <tr>
             <th>Người chơi</th>
-            <th class="text-center">Đã dự đoán</th>
-            <th class="text-center">Đúng</th>
-            <th class="text-center">Sai</th>
-            <th class="text-center">Chưa có KQ</th>
-            <th class="text-end">Tổng phạt</th>
+            <th class="text-center" style="width: 120px;">Đã dự đoán</th>
+            <th class="text-center" style="width: 80px;">Đúng</th>
+            <th class="text-center" style="width: 80px;">Sai</th>
+            <th class="text-center" style="width: 100px;">Hòa</th>
+            <th class="text-center" style="width: 110px;">Chưa có KQ</th>
+            <th class="text-end" style="width: 150px;">Tổng 🍺</th>
           </tr>
         </thead>
 
         <tbody>
           {% for item in summary_list %}
           <tr>
-            <td class="fw-semibold">
+            <td class="fw-bold text-dark">
               👤 {{ item.username }}
             </td>
 
-            <td class="text-center">
+            <td class="text-center fw-semibold text-secondary">
               {{ item.total_predictions }}
             </td>
 
             <td class="text-center">
-              <span class="badge rounded-pill text-bg-success">
-                {{ item.correct }}
-              </span>
+              <span class="badge bg-success fw-bold shadow-sm" style="font-size: 0.75rem; padding: 0.35em 0.6em;">{{ item.correct }}</span>
             </td>
-
             <td class="text-center">
-              <span class="badge rounded-pill text-bg-danger">
-                {{ item.wrong }}
-              </span>
+              <span class="badge bg-danger fw-bold shadow-sm" style="font-size: 0.75rem; padding: 0.35em 0.6em;">{{ item.wrong }}</span>
             </td>
-
             <td class="text-center">
-              <span class="badge rounded-pill text-bg-secondary">
-                {{ item.pending }}
-              </span>
+              <span class="badge bg-info text-dark fw-bold shadow-sm" style="font-size: 0.75rem; padding: 0.35em 0.6em;">{{ item.push }}</span>
+            </td>
+            <td class="text-center">
+              <span class="badge bg-secondary fw-bold shadow-sm" style="font-size: 0.75rem; padding: 0.35em 0.6em;">{{ item.pending }}</span>
             </td>
 
-            <td class="text-end fw-bold text-danger">
-              {{ "{:,.0f}".format(item.total_fine) }} VND
+            <td class="text-end text-danger fw-bold fs-6">
+              {{ "{:,.0f}".format(item.total_beer) }} 🍺
             </td>
           </tr>
           {% else %}
           <tr>
-            <td colspan="6" class="text-center text-muted py-5">
+            <td colspan="7" class="text-center text-muted py-5 fw-medium">
               Chưa có dữ liệu dự đoán.
             </td>
           </tr>
@@ -95,5 +94,47 @@
   </div>
 
 </div>
+
+<style>
+  /* Màu chủ đạo gradient World Cup lịch lãm cho phần tổng hợp */
+  .bg-gradient-summary {
+    background: linear-gradient(135deg, #1e293b 0%, #475569 100%) !important;
+  }
+  .btn-gradient-primary {
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    border: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .btn-gradient-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  }
+
+  /* Cấu trúc font chữ nhỏ gọn và nén padding tinh tế */
+  .summary-table th {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #4b5563;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.65rem 0.4rem !important;
+    background-color: #f3f4f6;
+    border-bottom: 2px solid #e5e7eb;
+  }
+
+  .summary-table td {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.4rem !important;
+    white-space: nowrap;
+  }
+
+  /* Kẻ dòng xen kẽ cho bảng dữ liệu */
+  .summary-table tbody tr:nth-child(even) {
+    background-color: #f8fafc;
+  }
+  .summary-table tbody tr:hover {
+    background-color: #edf2f7 !important;
+  }
+</style>
 
 {% endblock %}

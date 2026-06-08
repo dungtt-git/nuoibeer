@@ -1,38 +1,32 @@
 {% extends "base.html" %}
 
-{% block title %}Dự đoán World Cup 2026{% endblock %}
+{% block title %}Dự đoán - Nuôi Beer{% endblock %}
 
 {% block content %}
-<div class="container py-4 main-predict-container">
 
-  <!-- Header Section -->
-  <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-4">
+<div class="container-fluid py-3 px-3" style="max-width: 1400px; margin: 0 auto;">
+
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3 p-3 rounded-3" style="background: linear-gradient(135deg, #e0e9ff 0%, #f5f3ff 100%); border-left: 5px solid #4f46e5;">
     <div>
-      <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle mb-2 px-3 py-1.5 rounded-pill fw-medium header-fine-badge">
-        💰 Phạt 10.000 VND nếu đoán sai
-      </span>
-      <h1 class="fw-bold text-dark tracking-tight mb-1" style="font-size: 1.75rem;">🔮 Dự đoán World Cup 2026</h1>
-      <p class="text-muted small mb-0">
-        Chọn kết quả cho từng trận. Anh có thể thay đổi dự đoán trước giờ bóng lăn.
+      <span class="badge text-bg-warning border border-warning-subtle mb-1 blink-badge" style="font-size: 0.75rem; animation: pulse 2s infinite;">🔥 trình kém thì mời 🍺</span>
+      <h2 class="fw-bold mb-0 text-dark" style="font-size: 1.6rem; letter-spacing: -0.5px;">🔮 SIÊU TIÊN TRI WORLD CUP</h2>
+      <p class="text-muted mb-0 small fw-medium">
+        Gia cát dự nhanh lên, sẽ bị khóa trước giờ bóng lăn 1 tiếng.
       </p>
     </div>
 
-    <a href="/lich-su-du-doan" class="btn btn-sm btn-outline-primary rounded-3 px-3 py-2 fw-medium text-nowrap align-self-stretch align-self-lg-center">
-      📜 Xem lịch sử dự đoán
+    <a href="/lich-su-du-doan" class="btn btn-sm btn-gradient-secondary rounded-pill px-3 align-self-start align-self-sm-center fw-semibold text-white shadow-sm">
+      📜 Xem lịch sử
     </a>
   </div>
 
   <form method="post">
-    <!-- Table Card -->
-    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
-      <div class="card-header bg-white border-bottom border-light-subtle py-3 px-3">
+
+    <div class="card border-0 shadow rounded-3 overflow-hidden">
+      <div class="card-header bg-gradient-match py-2 px-3">
         <div class="d-flex justify-content-between align-items-center">
-          <div class="fw-bold text-secondary small text-uppercase tracking-wider">
-            Danh sách trận đấu
-          </div>
-          <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5">
-            {{ fixtures|length }} trận
-          </span>
+          <div class="fw-bold text-white small" style="letter-spacing: 0.5px;">⚽ DANH SÁCH TRẬN ĐẤU CẦN DỰ ĐOÁN</div>
+          <span class="badge text-bg-light fw-bold text-primary shadow-sm" style="font-size: 0.75rem;">{{ fixtures|length }} TRẬN</span>
         </div>
       </div>
 
@@ -40,64 +34,62 @@
         <table class="table table-hover align-middle mb-0 prediction-table">
           <thead>
             <tr>
-              <th class="text-center" style="width: 80px;">Mã trận</th>
-              <th style="width: 110px;">Ngày</th>
-              <th style="width: 90px;">Giờ VN</th>
-              <th class="text-end" style="width: 25%;">Đội 1</th>
-              <th class="text-center" style="width: 260px;">Dự đoán của anh</th>
-              <th class="text-start" style="width: 25%;">Đội 2</th>
+              <th class="text-center" style="width: 50px;">Trận</th>
+              <th style="width: 90px;">Ngày</th>
+              <th style="width: 80px;">Giờ VN</th>
+              <th class="text-end" style="width: 20%;">Đội 1</th>
+              <th class="text-center" style="width: 100px;">Kèo Chấp</th>
+              <th class="text-center" style="width: 240px;">Dự đoán của bạn</th>
+              <th style="width: 20%;">Đội 2</th>
+              <th class="text-center" style="width: 90px;">Trạng thái</th>
             </tr>
           </thead>
 
           <tbody>
             {% for match in fixtures %}
-            <tr>
+            <tr class="match-row">
               <td class="text-center">
-                <span class="badge text-secondary bg-light border font-monospace small">
-                  #{{ match.match_no }}
-                </span>
+                <span class="badge rounded-pill text-bg-light border text-muted fw-bold" style="font-size: 0.75rem;">#{{ match.match_no }}</span>
               </td>
 
-              <td class="text-secondary font-monospace">
-                {{ match.date }}
-              </td>
+              <td class="text-nowrap text-secondary fw-medium">{{ match.date }}</td>
 
-              <td>
+              <td class="text-nowrap">
                 {% if match.time_vn %}
-                  <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace font-medium">{{ match.time_vn }}</span>
+                  <span class="badge text-bg-success border border-success-subtle fw-bold shadow-sm" style="font-size: 0.75rem;">{{ match.time_vn }}</span>
                 {% else %}
-                  <span class="text-muted italic-text">Cập nhật</span>
+                  <span class="text-muted small">Cập nhật</span>
                 {% endif %}
               </td>
 
-              <td class="fw-semibold text-end text-dark">
-                {{ match.home }}
+              <td class="fw-bold text-end text-dark fs-6">{{ match.home }}</td>
+
+              <td class="text-center">
+                <span class="badge text-bg-warning fw-bold border border-warning shadow-sm" style="font-size: 0.78rem; padding: 0.35em 0.65em;">
+                  {{ match.handicap_text }}
+                </span>
               </td>
 
               <td>
-                <div class="px-2">
-                  <select class="form-select form-select-sm rounded-3 text-center text-secondary-emphasis" name="match_{{ match.match_no }}" {% if match.locked %}disabled{% endif %} style="font-size: 0.85rem; height: 34px;">
-                    <option value="" class="text-muted">-- Chọn dự đoán --</option>
-                    <option value="home" {% if predictions.get(match.match_no) == "home" %}selected{% endif %}>
-                      👉 {{ match.home }} thắng
-                    </option>
-                    <option value="draw" {% if predictions.get(match.match_no) == "draw" %}selected{% endif %}>
-                      🤝 Hòa nhau
-                    </option>
-                    <option value="away" {% if predictions.get(match.match_no) == "away" %}selected{% endif %}>
-                      👉 {{ match.away }} thắng
-                    </option>
-                  </select>
-                  {% if match.locked %}
-                    <div class="small text-danger mt-1">
-                        Đã khóa dự đoán
-                    </div>
-                    {% endif %}
-                </div>
+                <select class="form-select form-select-sm rounded-pill prediction-select fw-semibold" name="match_{{ match.match_no }}" {% if match.locked %}disabled{% endif %}>
+                  <option value="">-- Chọn đội thắng --</option>
+                  <option value="home" {% if predictions.get(match.match_no) == "home" %}selected{% endif %}>
+                    🔥 {{ match.home }} thắng
+                  </option>
+                  <option value="away" {% if predictions.get(match.match_no) == "away" %}selected{% endif %}>
+                    🔥 {{ match.away }} thắng
+                  </option>
+                </select>
               </td>
 
-              <td class="fw-semibold text-start text-dark">
-                {{ match.away }}
+              <td class="fw-bold text-dark fs-6">{{ match.away }}</td>
+
+              <td class="text-center">
+                {% if match.locked %}
+                  <span class="badge rounded-pill text-bg-danger fw-bold opacity-75 shadow-sm" style="font-size: 0.7rem; padding: 0.4em 0.7em;">🔒 Đã khóa</span>
+                {% else %}
+                  <span class="badge rounded-pill text-bg-primary fw-bold shadow-sm animate-pulse-green" style="font-size: 0.7rem; padding: 0.4em 0.7em; background-color: #0d6efd !important;">🔓 Đang mở</span>
+                {% endif %}
               </td>
             </tr>
             {% endfor %}
@@ -106,50 +98,95 @@
       </div>
     </div>
 
-    <!-- Sticky Bottom Bar -->
-    <div class="sticky-bottom bg-white border border-light-subtle rounded-3 shadow p-3 mt-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3" style="bottom: 15px; z-index: 1020;">
-      <div class="text-muted small d-flex align-items-center gap-2">
-        ℹ️ <span class="d-none d-sm-inline">Hệ thống tự động lưu dựa trên tài khoản của anh.</span>
+    <div class="sticky-bottom bg-white border border-top-0 rounded-bottom-3 shadow p-2.5 mt-2 d-flex justify-content-between align-items-center gap-3 container-sticky">
+      <div class="text-dark fw-medium" style="font-size: 0.8rem;">
+        💡 <span class="text-muted">Nếu hòa kèo thì chúc mừng.</span>
       </div>
-
-      <button class="btn btn-primary btn-sm rounded-3 px-4 py-2 fw-medium shadow-sm w-100 w-md-auto">
-        💾 Lưu kết quả dự đoán
+      <button class="btn btn-gradient-primary btn-sm rounded-pill px-4 fw-bold text-white shadow">
+        🔥 LƯU DỰ ĐOÁN NGAY
       </button>
     </div>
 
   </form>
+
 </div>
 
 <style>
-  .main-predict-container {
-    font-size: 0.9rem;
-    letter-spacing: -0.01em;
+  /* Màu chủ đạo gradient World Cup */
+  .bg-gradient-match {
+    background: linear-gradient(135deg, #1e3a8a 0%, #4c1d95 100%) !important;
   }
+  .btn-gradient-primary {
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    border: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .btn-gradient-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  }
+  .btn-gradient-secondary {
+    background: linear-gradient(135deg, #4b5563 0%, #1f2937 100%);
+    border: none;
+  }
+
+  /* Cấu trúc font chữ nhỏ gọn tinh tế */
   .prediction-table th {
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: #8a92a6;
-    text-uppercase: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0.75rem 1rem;
-    background-color: #fafbfc !important;
-    border-bottom: 1px solid #edf2f7;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #4b5563;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.65rem 0.4rem !important;
+    background-color: #f3f4f6;
+    border-bottom: 2px solid #e5e7eb;
   }
+
   .prediction-table td {
-    padding: 0.6rem 1rem;
     font-size: 0.85rem;
-    border-bottom: 1px solid #f1f5f9;
+    padding: 0.55rem 0.4rem !important;
+    white-space: nowrap;
+  }
+
+  /* Kẻ dòng xen kẽ cho bảng đỡ nhàm chán */
+  .prediction-table tbody tr:nth-child(even) {
+    background-color: #f8fafc;
   }
   .prediction-table tbody tr:hover {
-    background-color: #f8fafc !important;
-    transition: background-color 0.2s ease;
+    background-color: #edf2f7 !important;
   }
-  .header-fine-badge {
+
+  /* Định dạng Dropdown Select gọn nhỏ */
+  .prediction-select {
     font-size: 0.8rem !important;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    cursor: pointer;
+    border-color: #cbd5e1;
+    background-color: #fff;
   }
-  .italic-text {
-    font-style: italic;
-    font-size: 0.8rem;
+  .prediction-select:focus {
+    border-color: #a78bfa;
+    box-shadow: 0 0 0 0.15rem rgba(139, 92, 246, 0.2);
+  }
+
+  /* Phần sticky bottom mượt mà bám dính dưới chân màn hình */
+  .container-sticky {
+    position: sticky;
+    bottom: 1rem;
+    z-index: 1020;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 12px !important;
+    background-color: rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03) !important;
+  }
+
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
   }
 </style>
+
 {% endblock %}

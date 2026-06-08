@@ -1,88 +1,177 @@
 {% extends "base.html" %}
 
-{% block title %}World Cup 2026{% endblock %}
+{% block title %}Trang chủ - Nuôi Beer{% endblock %}
 
 {% block content %}
 
-<div class="container py-5">
+<div class="container-fluid py-4 px-3" style="max-width: 1400px; margin: 0 auto;">
 
-    <div class="text-center mb-5">
-        <h1 class="display-3 fw-bold">
-            🏆 World Cup 2026
-        </h1>
+  <div class="text-center py-4 mb-4 rounded-3 text-white shadow-sm position-relative overflow-hidden" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #4c1d95 100%);">
+    
+    <h1 class="display-5 fw-extrabold mb-1" style="letter-spacing: -1px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">🍺 NUÔI BEER</h1>
+    <p class="lead text-white-50 mb-0 fw-medium" style="font-size: 1rem;">
+      Bóng đá là thứ tồn tại duy nhất. Tất cả những thứ khác, có hay không không quan trọng.!
+    </p>
+  </div>
 
-        <p class="lead text-muted">
-            Theo dõi bảng xếp hạng, lịch thi đấu và dự đoán World Cup 2026
-        </p>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow rounded-3 h-100 text-white overflow-hidden card-hover" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);">
+        <div class="card-body p-3 text-center">
+          <div class="text-white-50 small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">👤 Người chơi</div>
+          <div class="fw-extrabold my-1" style="font-size: 1.8rem; letter-spacing: -0.5px;">{{ stats.users }}</div>
+          <span class="badge bg-white bg-opacity-20 small style-badge">Thành viên</span>
+        </div>
+      </div>
     </div>
 
-    <div class="row g-4">
-
-        <div class="col-md-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body text-center">
-
-                    <div class="fs-1 mb-3">📊</div>
-
-                    <h3>Bảng xếp hạng</h3>
-
-                    <p class="text-muted">
-                        Xem vị trí các đội theo từng bảng đấu.
-                    </p>
-
-                    <a href="/bang-xep-hang"
-                       class="btn btn-primary">
-                        Xem ngay
-                    </a>
-
-                </div>
-            </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow rounded-3 h-100 text-white overflow-hidden card-hover" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+        <div class="card-body p-3 text-center">
+          <div class="text-white-50 small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">🏁 Đã có kết quả</div>
+          <div class="fw-extrabold my-1" style="font-size: 1.8rem; letter-spacing: -0.5px;">{{ stats.finished_matches }}/{{ stats.matches }}</div>
+          <span class="badge bg-white bg-opacity-20 small style-badge">Trận đấu</span>
         </div>
-
-        <div class="col-md-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body text-center">
-
-                    <div class="fs-1 mb-3">📅</div>
-
-                    <h3>Lịch thi đấu</h3>
-
-                    <p class="text-muted">
-                        Toàn bộ lịch thi đấu World Cup 2026.
-                    </p>
-
-                    <a href="/lich-thi-dau"
-                       class="btn btn-success">
-                        Xem lịch
-                    </a>
-
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body text-center">
-
-                    <div class="fs-1 mb-3">🔮</div>
-
-                    <h3>Dự đoán</h3>
-
-                    <p class="text-muted">
-                        Dự đoán đội vô địch và tỷ lệ đi tiếp.
-                    </p>
-
-                    <a href="/du-doan"
-                       class="btn btn-warning">
-                        Dự đoán
-                    </a>
-
-                </div>
-            </div>
-        </div>
-
+      </div>
     </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow rounded-3 h-100 text-white overflow-hidden card-hover" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">
+        <div class="card-body p-3 text-center">
+          <div class="text-white-50 small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">🔮 Lượt dự đoán</div>
+          <div class="fw-extrabold my-1" style="font-size: 1.8rem; letter-spacing: -0.5px;">{{ stats.predictions }}</div>
+          <span class="badge bg-white bg-opacity-20 small style-badge">Cửa đã đặt</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow rounded-3 h-100 text-white overflow-hidden card-hover" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+        <div class="card-body p-3 text-center">
+          <div class="text-white-50 small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">💸 Quỹ beer</div>
+          <div class="fw-extrabold my-1 text-warning" style="font-size: 1.8rem; letter-spacing: -0.5px; color: #fde047 !important;">{{ "{:,.0f}".format(stats.grand_total) }}</div>
+          <span class="badge bg-white bg-opacity-20 small style-badge">VND</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <a href="/du-doan" class="text-decoration-none menu-card-link">
+            <div class="card border-0 shadow rounded-3 h-100 position-relative overflow-hidden" style="border-bottom: 4px solid #3b82f6 !important;">
+              <div class="card-body text-center p-3">
+                <div class="fs-2 mb-1">🔮</div>
+                <h5 class="fw-bold text-dark mb-1">Dự đoán</h5>
+                <p class="text-muted mb-0 small fw-medium">Chọn đội thắng từng trận.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-4">
+          <a href="/tong-hop" class="text-decoration-none menu-card-link">
+            <div class="card border-0 shadow rounded-3 h-100 position-relative overflow-hidden" style="border-bottom: 4px solid #10b981 !important;">
+              <div class="card-body text-center p-3">
+                <div class="fs-2 mb-1">💰</div>
+                <h5 class="fw-bold text-dark mb-1">Tổng hợp</h5>
+                <p class="text-muted mb-0 small fw-medium">Anh em đã cống hiến bao nhiêu.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-4">
+          <a href="/lich-thi-dau" class="text-decoration-none menu-card-link">
+            <div class="card border-0 shadow rounded-3 h-100 position-relative overflow-hidden" style="border-bottom: 4px solid #8b5cf6 !important;">
+              <div class="card-body text-center p-3">
+                <div class="fs-2 mb-1">📅</div>
+                <h5 class="fw-bold text-dark mb-1">Lịch thi đấu</h5>
+                <p class="text-muted mb-0 small fw-medium">Xem lịch và tỷ số.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card border-0 shadow rounded-3 overflow-hidden">
+        <div class="card-header text-white fw-bold py-2 px-3 small bg-gradient-mini" style="letter-spacing: 0.5px;">
+          🏆 TOP ANH EM CỐNG HIẾN
+        </div>
+        <div class="card-body p-0">
+          {% for item in leaderboard %}
+            <div class="d-flex justify-content-between align-items-center border-bottom py-2 px-3 row-mini-bxh">
+              <div class="d-flex align-items-center gap-2">
+                <div class="fw-bold" style="width: 25px;">
+                  {% if loop.index == 1 %}🥇
+                  {% elif loop.index == 2 %}🥈
+                  {% elif loop.index == 3 %}🥉
+                  {% else %}<span class="text-muted small ps-1">{{ loop.index }}</span>
+                  {% endif %}
+                </div>
+                <div>
+                  <div class="fw-bold text-dark small" style="font-size: 0.85rem;">{{ item.username }}</div>
+                  <div class="text-muted" style="font-size: 0.72rem; font-weight: 500;">
+                    Đúng {{ item.correct }} / Sai {{ item.wrong }}
+                  </div>
+                </div>
+              </div>
+              <span class="badge bg-success fw-bold shadow-sm" style="font-size: 0.72rem; padding: 0.35em 0.55em;">{{ item.accuracy }}%</span>
+            </div>
+          {% else %}
+            <div class="text-center text-muted py-4 small fw-medium">Chưa có dữ liệu thống kê.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
 
 </div>
+
+<style>
+  /* Hiệu ứng di chuột nhẹ cho các ô số liệu */
+  .card-hover {
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15) !important;
+  }
+
+  /* Style cho Badge phụ trong thẻ thống kê */
+  .style-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    padding: 0.3em 0.6em;
+  }
+
+  /* Hiệu ứng các ô menu lớn */
+  .menu-card-link .card {
+    transition: all 0.2s ease-in-out;
+  }
+  .menu-card-link:hover .card {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1) !important;
+    background-color: #f8fafc;
+  }
+
+  /* Header bảng xếp hạng mini */
+  .bg-gradient-mini {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+  }
+
+  /* Màu nền hover dòng bảng xếp hạng mini */
+  .row-mini-bxh:hover {
+    background-color: #f1f5f9;
+  }
+  .row-mini-bxh:last-child {
+    border-bottom: none !important;
+  }
+</style>
 
 {% endblock %}

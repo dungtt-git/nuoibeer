@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Quản lý trận đấu{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4 px-4">
+
+  <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+    <div>
+      <h1 class="fw-bold mb-1">⚙️ Quản lý trận đấu</h1>
+      <p class="text-muted mb-0">
+        Admin nhập giờ, tỷ số và kèo chấp theo số bàn thắng.
+      </p>
+    </div>
+
+    <a href="/lich-thi-dau" class="btn btn-outline-primary rounded-pill px-4">
+      📅 Xem lịch thi đấu
+    </a>
+  </div>
+
+  <div class="alert alert-info">
+    Ví dụ: Mexico chấp 0.5 nghĩa là Mexico phải thắng tối thiểu 1 bàn mới thắng kèo. Hòa hoặc thua là Mexico thua kèo.
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0 admin-match-table">
+
+        <thead class="table-light">
+          <tr>
+            <th>Trận</th>
+            <th>Ngày</th>
+            <th>Giờ VN</th>
+            <th>Vòng</th>
+            <th>Bảng</th>
+            <th>Cặp đấu</th>
+            <th class="text-center">Tỷ số</th>
+            <th class="text-center">Kèo chấp</th>
+            <th class="text-end">Lưu</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for match in matches %}
+          <tr>
+            <form method="post" action="/admin/matches/{{ match.match_no }}/update">
+              <td class="fw-bold">#{{ match.match_no }}</td>
+              <td class="text-nowrap">{{ match.date }}</td>
+
+              <td style="min-width: 95px;">
+                <input type="text" class="form-control form-control-sm" name="time_vn" value="{{ match.time_vn or '' }}" placeholder="HH:MM">
+              </td>
+
+              <td class="text-nowrap">{{ match.stage }}</td>
+
+              <td>
+                {% if match.group %}
+                  <span class="badge text-bg-secondary">Bảng {{ match.group }}</span>
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+
+              <td style="min-width: 260px;">
+                <div class="fw-semibold">1. {{ match.home }}</div>
+                <div class="small text-muted">vs</div>
+                <div class="fw-semibold">2. {{ match.away }}</div>
+              </td>
+
+              <td style="min-width: 120px;">
+                <div class="d-flex align-items-center gap-1">
+                  <input type="number" class="form-control form-control-sm text-center" name="score_home" value="{{ match.score_home if match.score_home is not none else '' }}" min="0">
+                  <span class="text-muted">-</span>
+                  <input type="number" class="form-control form-control-sm text-center" name="score_away" value="{{ match.score_away if match.score_away is not none else '' }}" min="0">
+                </div>
+              </td>
+
+              <td style="min-width: 280px;">
+                <div class="row g-2">
+                  <div class="col-7">
+                    <select class="form-select form-select-sm" name="handicap_team">
+                      <option value="" {% if not match.handicap_team %}selected{% endif %}>Đồng banh</option>
+                      <option value="home" {% if match.handicap_team == "home" %}selected{% endif %}>{{ match.home }} chấp</option>
+                      <option value="away" {% if match.handicap_team == "away" %}selected{% endif %}>{{ match.away }} chấp</option>
+                    </select>
+                  </div>
+
+                  <div class="col-5">
+                    <input
+                      type="number"
+                      step="0.25"
+                      min="0"
+                      class="form-control form-control-sm"
+                      name="handicap_value"
+                      value="{{ match.handicap_value or 0 }}">
+                  </div>
+                </div>
+
+                <div class="small text-muted mt-1">
+                  Hiện tại: {{ match.handicap_text }}
+                </div>
+              </td>
+
+              <td class="text-end">
+                <button class="btn btn-sm btn-primary rounded-pill px-3">Lưu</button>
+              </td>
+            </form>
+          </tr>
+          {% endfor %}
+        </tbody>
+
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<style>
+  .admin-match-table th {
+    font-size: 0.85rem;
+    color: #6c757d;
+    white-space: nowrap;
+  }
+
+  .admin-match-table td {
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+</style>
+
+{% endblock %}
