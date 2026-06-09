@@ -342,6 +342,7 @@ def get_handicap_result(match):
 
 
 def is_match_locked(match):
+    return false
     date = match.get("date")
     time_vn = match.get("time_vn")
 
@@ -612,7 +613,7 @@ def reset_user_password(user_id):
     conn.close()
 
     return redirect("/admin/users")
-    
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
