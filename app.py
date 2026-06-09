@@ -342,7 +342,6 @@ def get_handicap_result(match):
 
 
 def is_match_locked(match):
-    return false
     date = match.get("date")
     time_vn = match.get("time_vn")
 
