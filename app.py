@@ -1,6 +1,7 @@
 import json
 import sqlite3
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from functools import cmp_to_key
 from flask import Flask, render_template, request, redirect, session, send_file
@@ -343,12 +344,25 @@ def is_match_locked(match):
         return False
 
     try:
-        match_time = datetime.strptime(f"{date} {time_vn}", "%Y-%m-%d %H:%M")
+        match_time = datetime.strptime(
+            f"{date} {time_vn}",
+            "%Y-%m-%d %H:%M"
+        )
+
+        match_time = match_time.replace(
+            tzinfo=ZoneInfo("Asia/Ho_Chi_Minh")
+        )
+
     except ValueError:
         return False
 
+    now = datetime.now(
+        ZoneInfo("Asia/Ho_Chi_Minh")
+    )
+
     lock_time = match_time - timedelta(hours=1)
-    return datetime.now() >= lock_time
+
+    return now >= lock_time
 
 def get_head_to_head_stats(team_a, team_b):
     conn = get_db()
