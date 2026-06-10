@@ -157,4 +157,72 @@
   }
 </style>
 
+<!-- DÁN ĐOẠN NÀY VÀO TRƯỚC endblock -->
+
+<div class="card border-0 shadow-sm rounded-4 mt-5 overflow-hidden">
+  <div class="card-header bg-white border-0 py-3 px-4">
+    <h4 class="fw-bold mb-0">🥉 8 đội hạng ba đi tiếp</h4>
+    <div class="text-muted small mt-1">
+      Xếp theo điểm, hiệu số, số bàn thắng.
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="text-center">#</th>
+          <th>Bảng</th>
+          <th>Đội</th>
+          <th class="text-center">Trận</th>
+          <th class="text-center">Điểm</th>
+          <th class="text-center">Hiệu số</th>
+          <th class="text-center">Bàn thắng</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for team in qualified_thirds %}
+        <tr>
+          <td class="text-center fw-bold">{{ loop.index }}</td>
+
+          <td>
+            <span class="badge text-bg-secondary">
+              Bảng {{ team.group }}
+            </span>
+          </td>
+
+          <td class="fw-semibold">
+            {{ team.name }}
+          </td>
+
+          <td class="text-center">
+            {{ team.played }}
+          </td>
+
+          <td class="text-center fw-bold">
+            {{ team.points }}
+          </td>
+
+          <td class="text-center">
+            {{ team.goals_for - team.goals_against }}
+          </td>
+
+          <td class="text-center">
+            {{ team.goals_for }}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">
+            Chưa đủ dữ liệu để xác định đội hạng ba đi tiếp.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
 {% endblock %}

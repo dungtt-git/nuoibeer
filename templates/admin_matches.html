@@ -46,7 +46,13 @@
           <tr>
             <form method="post" action="/admin/matches/{{ match.match_no }}/update">
               <td class="fw-bold">#{{ match.match_no }}</td>
-              <td class="text-nowrap">{{ match.date }}</td>
+              <td style="min-width: 140px;">
+                <input
+                  type="date"
+                  class="form-control form-control-sm"
+                  name="match_date"
+                  value="{{ match.date or '' }}">
+              </td>
 
               <td style="min-width: 95px;">
                 <input type="text" class="form-control form-control-sm" name="time_vn" value="{{ match.time_vn or '' }}" placeholder="HH:MM">
@@ -63,9 +69,21 @@
               </td>
 
               <td style="min-width: 260px;">
-                <div class="fw-semibold">1. {{ match.home }}</div>
-                <div class="small text-muted">vs</div>
-                <div class="fw-semibold">2. {{ match.away }}</div>
+                <input
+                  type="text"
+                  class="form-control form-control-sm mb-1 fw-semibold"
+                  name="home"
+                  value="{{ match.home }}"
+                  placeholder="Đội 1">
+
+                <div class="small text-muted text-center">vs</div>
+
+                <input
+                  type="text"
+                  class="form-control form-control-sm mt-1 fw-semibold"
+                  name="away"
+                  value="{{ match.away }}"
+                  placeholder="Đội 2">
               </td>
 
               <td style="min-width: 120px;">
@@ -81,8 +99,8 @@
                   <div class="col-7">
                     <select class="form-select form-select-sm" name="handicap_team">
                       <option value="" {% if not match.handicap_team %}selected{% endif %}>Đồng banh</option>
-                      <option value="home" {% if match.handicap_team == "home" %}selected{% endif %}>{{ match.home }} chấp</option>
-                      <option value="away" {% if match.handicap_team == "away" %}selected{% endif %}>{{ match.away }} chấp</option>
+                      <option value="home" {% if match.handicap_team == "home" %}selected{% endif %}>{{ match.home_display or match.home }} chấp</option>
+                      <option value="away" {% if match.handicap_team == "away" %}selected{% endif %}>{{ match.away_display or match.away }} chấp</option>
                     </select>
                   </div>
 

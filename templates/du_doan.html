@@ -8,7 +8,7 @@
 
   <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3 p-3 rounded-3" style="background: linear-gradient(135deg, #e0e9ff 0%, #f5f3ff 100%); border-left: 5px solid #4f46e5;">
     <div>
-      <span class="badge text-bg-warning border border-warning-subtle mb-1 blink-badge" style="font-size: 0.75rem; animation: pulse 2s infinite;">🔥 trình kém thì mời 🍺</span>
+      <span class="badge text-bg-warning border border-warning-subtle mb-1 blink-badge" style="font-size: 0.75rem; animation: pulse 2s infinite;">🔥 Trình kém thì mời 🍺</span>
       <h2 class="fw-bold mb-0 text-dark" style="font-size: 1.6rem; letter-spacing: -0.5px;">🔮 SIÊU TIÊN TRI WORLD CUP</h2>
       <p class="text-muted mb-0 small fw-medium">
         Gia cát dự nhanh lên, sẽ bị khóa trước giờ bóng lăn 1 tiếng.
@@ -62,7 +62,7 @@
                 {% endif %}
               </td>
 
-              <td class="fw-bold text-end text-dark fs-6">{{ match.home }}</td>
+              <td class="fw-bold text-end text-dark fs-6">{{ match.home_display or match.home }}</td>
 
               <td class="text-center">
                 <span class="badge text-bg-warning fw-bold border border-warning shadow-sm" style="font-size: 0.78rem; padding: 0.35em 0.65em;">
@@ -72,17 +72,20 @@
 
               <td>
                 <select class="form-select form-select-sm rounded-pill prediction-select fw-semibold" name="match_{{ match.match_no }}" {% if match.locked %}disabled{% endif %}>
-                  <option value="">-- Chọn đội thắng --</option>
+                  <option value="">-- 🍺 Chốt nào anh em? --</option>
                   <option value="home" {% if predictions.get(match.match_no) == "home" %}selected{% endif %}>
-                    🔥 {{ match.home }} thắng
+                    🔥 {{ match.home_display or match.home }} thắng
+                  </option>
+                  <option value="draw" {% if predictions.get(match.match_no) == "draw" %}selected{% endif %}>
+                    🤝 Hòa
                   </option>
                   <option value="away" {% if predictions.get(match.match_no) == "away" %}selected{% endif %}>
-                    🔥 {{ match.away }} thắng
+                    🔥 {{ match.away_display or match.away }} thắng
                   </option>
                 </select>
               </td>
 
-              <td class="fw-bold text-dark fs-6">{{ match.away }}</td>
+              <td class="fw-bold text-dark fs-6">{{ match.away_display or match.away }}</td>
 
               <td class="text-center">
                 {% if match.locked %}

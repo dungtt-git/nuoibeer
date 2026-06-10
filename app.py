@@ -2,10 +2,10 @@ import json
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
-
+from functools import cmp_to_key
 from flask import Flask, render_template, request, redirect, session, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
-
+import shutil
 
 app = Flask(__name__)
 app.secret_key = "nuoibeer_secret_key_2026"
@@ -308,13 +308,6 @@ def get_handicap_text(match):
 
 
 def get_handicap_result(match):
-    """
-    Return:
-    - "home": đội 1 thắng kèo
-    - "away": đội 2 thắng kèo
-    - "push": hòa kèo, không phạt
-    - None: chưa có kết quả
-    """
     score_home = match.get("score_home")
     score_away = match.get("score_away")
 
@@ -329,16 +322,17 @@ def get_handicap_result(match):
 
     if handicap_team == "home":
         adjusted_home -= handicap_value
+
     elif handicap_team == "away":
         adjusted_away -= handicap_value
 
     if adjusted_home > adjusted_away:
         return "home"
 
-    if adjusted_home < adjusted_away:
+    if adjusted_away > adjusted_home:
         return "away"
 
-    return "push"
+    return "draw"
 
 
 def is_match_locked(match):
@@ -356,6 +350,265 @@ def is_match_locked(match):
     lock_time = match_time - timedelta(hours=1)
     return datetime.now() >= lock_time
 
+def get_head_to_head_stats(team_a, team_b):
+    conn = get_db()
+
+    matches = conn.execute("""
+        SELECT
+            home,
+            away,
+            score_home,
+            score_away
+        FROM matches
+        WHERE score_home IS NOT NULL
+          AND score_away IS NOT NULL
+          AND (
+                (home = ? AND away = ?)
+             OR (home = ? AND away = ?)
+          )
+    """, (
+        team_a,
+        team_b,
+        team_b,
+        team_a
+    )).fetchall()
+
+    conn.close()
+
+    points_a = 0
+    gd_a = 0
+    goals_a = 0
+
+    for match in matches:
+
+        if match["home"] == team_a:
+            scored = match["score_home"]
+            conceded = match["score_away"]
+        else:
+            scored = match["score_away"]
+            conceded = match["score_home"]
+
+        goals_a += scored
+        gd_a += scored - conceded
+
+        if scored > conceded:
+            points_a += 3
+        elif scored == conceded:
+            points_a += 1
+
+    return (
+        points_a,
+        gd_a,
+        goals_a
+    )
+
+def compare_teams(team_a, team_b):
+
+    # 1. Điểm
+    if team_a["points"] != team_b["points"]:
+        return team_b["points"] - team_a["points"]
+
+    # 2. Hiệu số
+    gd_a = team_a["goals_for"] - team_a["goals_against"]
+    gd_b = team_b["goals_for"] - team_b["goals_against"]
+
+    if gd_a != gd_b:
+        return gd_b - gd_a
+
+    # 3. Bàn thắng
+    if team_a["goals_for"] != team_b["goals_for"]:
+        return team_b["goals_for"] - team_a["goals_for"]
+
+    # 4. Đối đầu trực tiếp
+    h2h_a = get_head_to_head_stats(
+        team_a["name"],
+        team_b["name"]
+    )
+
+    h2h_b = get_head_to_head_stats(
+        team_b["name"],
+        team_a["name"]
+    )
+
+    # điểm đối đầu
+    if h2h_a[0] != h2h_b[0]:
+        return h2h_b[0] - h2h_a[0]
+
+    # hiệu số đối đầu
+    if h2h_a[1] != h2h_b[1]:
+        return h2h_b[1] - h2h_a[1]
+
+    # bàn thắng đối đầu
+    if h2h_a[2] != h2h_b[2]:
+        return h2h_b[2] - h2h_a[2]
+
+    return 0
+
+def get_finished_group_matches():
+    conn = get_db()
+
+    rows = conn.execute("""
+        SELECT
+            group_name,
+            home,
+            away,
+            score_home,
+            score_away
+        FROM matches
+        WHERE stage = ?
+          AND score_home IS NOT NULL
+          AND score_away IS NOT NULL
+    """, ("Vòng bảng",)).fetchall()
+
+    conn.close()
+
+    return rows
+
+def calculate_head_to_head_table(teams, matches):
+    team_names = [team["name"] for team in teams]
+
+    h2h = {}
+
+    for name in team_names:
+        h2h[name] = {
+            "name": name,
+            "points": 0,
+            "goals_for": 0,
+            "goals_against": 0
+        }
+
+    for match in matches:
+        home = match["home"]
+        away = match["away"]
+
+        if home not in h2h or away not in h2h:
+            continue
+
+        score_home = match["score_home"]
+        score_away = match["score_away"]
+
+        h2h[home]["goals_for"] += score_home
+        h2h[home]["goals_against"] += score_away
+
+        h2h[away]["goals_for"] += score_away
+        h2h[away]["goals_against"] += score_home
+
+        if score_home > score_away:
+            h2h[home]["points"] += 3
+        elif score_home < score_away:
+            h2h[away]["points"] += 3
+        else:
+            h2h[home]["points"] += 1
+            h2h[away]["points"] += 1
+
+    return h2h
+
+def sort_tied_group(tied_teams, group_matches):
+    h2h = calculate_head_to_head_table(tied_teams, group_matches)
+
+    def h2h_key(team):
+        data = h2h[team["name"]]
+        h2h_gd = data["goals_for"] - data["goals_against"]
+
+        return (
+            data["points"],
+            h2h_gd,
+            data["goals_for"]
+        )
+
+    return sorted(
+        tied_teams,
+        key=h2h_key,
+        reverse=True
+    )
+
+def sort_group_fifa_style(teams, group_matches):
+    # Bước 1: sort theo điểm, hiệu số, bàn thắng
+    teams = sorted(
+        teams,
+        key=lambda team: (
+            team["points"],
+            team["goals_for"] - team["goals_against"],
+            team["goals_for"]
+        ),
+        reverse=True
+    )
+
+    result = []
+    index = 0
+
+    while index < len(teams):
+        current = teams[index]
+
+        tied_group = [current]
+        index += 1
+
+        while index < len(teams):
+            next_team = teams[index]
+
+            current_key = (
+                current["points"],
+                current["goals_for"] - current["goals_against"],
+                current["goals_for"]
+            )
+
+            next_key = (
+                next_team["points"],
+                next_team["goals_for"] - next_team["goals_against"],
+                next_team["goals_for"]
+            )
+
+            if next_key == current_key:
+                tied_group.append(next_team)
+                index += 1
+            else:
+                break
+
+        if len(tied_group) > 1:
+            tied_group = sort_tied_group(
+                tied_group,
+                group_matches
+            )
+
+        result.extend(tied_group)
+
+    return result
+
+def get_best_third_placed_teams():
+    groups = calculate_standings()
+
+    third_teams = []
+
+    for group_name, teams in groups.items():
+        if len(teams) >= 3:
+            team = teams[2].copy()
+            team["group"] = group_name
+            team["goal_difference"] = team["goals_for"] - team["goals_against"]
+            third_teams.append(team)
+
+    third_teams = sorted(
+        third_teams,
+        key=lambda team: (
+            team["points"],
+            team["goal_difference"],
+            team["goals_for"]
+        ),
+        reverse=True
+    )
+
+    qualified = third_teams[:8]
+    eliminated = third_teams[8:]
+
+    return qualified, eliminated
+
+def get_best_third_team_from_groups(group_options):
+    qualified_thirds, eliminated_thirds = get_best_third_placed_teams()
+
+    for team in qualified_thirds:
+        if team.get("group") in group_options:
+            return team["name"]
+
+    return None
 
 def calculate_standings():
     conn = get_db()
@@ -429,15 +682,18 @@ def calculate_standings():
             home["points"] += 1
             away["points"] += 1
 
+    all_group_matches = get_finished_group_matches()
+
     for group_name in groups:
-        groups[group_name] = sorted(
+        group_matches = [
+            match
+            for match in all_group_matches
+            if match["group_name"] == group_name
+        ]
+
+        groups[group_name] = sort_group_fifa_style(
             groups[group_name],
-            key=lambda t: (
-                t["points"],
-                t["goals_for"] - t["goals_against"],
-                t["goals_for"]
-            ),
-            reverse=True
+            group_matches
         )
 
     return groups
@@ -446,75 +702,252 @@ def calculate_standings():
 def get_summary_data():
     fixtures = get_matches()
 
-    for match in fixtures:
-        match["handicap_text"] = get_handicap_text(match)
-
-    fixture_lookup = {
-        match["match_no"]: match
-        for match in fixtures
-    }
-
     conn = get_db()
 
-    rows = conn.execute("""
-        SELECT
-            users.username,
-            predictions.match_no,
-            predictions.predicted_result
+    users = conn.execute("""
+        SELECT id, username
+        FROM users
+        WHERE is_active = 1
+        ORDER BY username
+    """).fetchall()
+
+    prediction_rows = conn.execute("""
+        SELECT user_id, match_no, predicted_result
         FROM predictions
-        JOIN users ON users.id = predictions.user_id
-        ORDER BY users.username, predictions.match_no
     """).fetchall()
 
     conn.close()
 
-    summary_data = {}
+    predictions = {}
 
-    for row in rows:
-        username = row["username"]
-        match_no = row["match_no"]
-        predicted_result = row["predicted_result"]
+    for row in prediction_rows:
+        predictions[(row["user_id"], row["match_no"])] = row["predicted_result"]
 
-        if username not in summary_data:
-            summary_data[username] = {
-                "username": username,
-                "total_predictions": 0,
-                "correct": 0,
-                "wrong": 0,
-                "push": 0,
-                "pending": 0,
-                "total_beer": 0,
-                "accuracy": 0
-            }
+    summary_list = []
 
-        summary_data[username]["total_predictions"] += 1
+    for user in users:
+        item = {
+            "username": user["username"],
+            "total_predictions": 0,   # số trận user đã chốt
+            "counted_matches": 0,      # số trận đã có tỷ số và được tính điểm
+            "correct": 0,
+            "wrong": 0,
+            "missed": 0,              # đã có tỷ số nhưng user không chọn
+            "push": 0,                # hòa kèo
+            "pending": 0,             # chưa có tỷ số
+            "total_beer": 0,
+            "accuracy": 0
+        }
 
-        match = fixture_lookup.get(match_no)
+        for match in fixtures:
+            match_no = match["match_no"]
+            predicted_result = predictions.get((user["id"], match_no))
 
-        if not match:
-            summary_data[username]["pending"] += 1
-            continue
+            if predicted_result:
+                item["total_predictions"] += 1
 
-        handicap_result = get_handicap_result(match)
+            handicap_result = get_handicap_result(match)
 
-        if handicap_result is None:
-            summary_data[username]["pending"] += 1
-        elif handicap_result == "push":
-            summary_data[username]["push"] += 1
-        elif predicted_result == handicap_result:
-            summary_data[username]["correct"] += 1
-        else:
-            summary_data[username]["wrong"] += 1
-            summary_data[username]["total_beer"] += get_stage_points(match["stage"])
+            # Trận chưa có tỷ số thì chưa tính điểm
+            if handicap_result is None:
+                item["pending"] += 1
+                continue
 
-    summary_list = list(summary_data.values())
+            # Hòa kèo:
+            # - chọn draw thì đúng
+            # - chọn home/away thì sai
+            # - không chọn thì bỏ lượt, tính sai
+            if handicap_result == "draw":
+                item["counted_matches"] += 1
 
-    for item in summary_list:
+                if predicted_result == "draw":
+                    item["correct"] += 1
+                elif predicted_result in ["home", "away"]:
+                    item["wrong"] += 1
+                    item["total_beer"] += get_stage_points(match["stage"])
+                else:
+                    item["missed"] += 1
+                    item["wrong"] += 1
+                    item["total_beer"] += get_stage_points(match["stage"])
+
+                item["push"] += 1
+                continue
+
+            # Trận đã có đội thắng kèo nhưng user không chọn
+            if not predicted_result:
+                item["counted_matches"] += 1
+                item["missed"] += 1
+                item["wrong"] += 1
+                item["total_beer"] += get_stage_points(match["stage"])
+                continue
+
+            # User chọn hòa nhưng thực tế không hòa kèo
+            if predicted_result == "draw":
+                item["counted_matches"] += 1
+                item["wrong"] += 1
+                item["total_beer"] += get_stage_points(match["stage"])
+                continue
+
+            # User chọn đúng đội thắng kèo
+            item["counted_matches"] += 1
+
+            if predicted_result == handicap_result:
+                item["correct"] += 1
+            else:
+                item["wrong"] += 1
+                item["total_beer"] += get_stage_points(match["stage"])
+
         counted = item["correct"] + item["wrong"]
         item["accuracy"] = round(item["correct"] * 100 / counted, 1) if counted > 0 else 0
 
+        summary_list.append(item)
+
     return summary_list
 
+def get_group_rank_team(group_name, rank):
+    """
+    Tra ve doi dung thu rank trong bang.
+    rank = 1: Nhat bang
+    rank = 2: Nhi bang
+    """
+    groups = calculate_standings()
+    teams = groups.get(group_name)
+
+    if not teams:
+        return None
+
+    index = rank - 1
+
+    if index < 0 or index >= len(teams):
+        return None
+
+    return teams[index]["name"]
+
+
+def get_match_winner(match_no):
+    """
+    Tra ve doi thang tran theo ty so that.
+    Neu chua co ty so hoac hoa thi tra None.
+    Luu y: knockout neu hoa 90 phut ma co penalty thi sau nay co the bo sung winner_team.
+    """
+    conn = get_db()
+
+    match = conn.execute("""
+        SELECT home, away, score_home, score_away
+        FROM matches
+        WHERE match_no = ?
+    """, (match_no,)).fetchone()
+
+    conn.close()
+
+    if not match:
+        return None
+
+    if match["score_home"] is None or match["score_away"] is None:
+        return None
+
+    if match["score_home"] > match["score_away"]:
+        return resolve_team_name(match["home"])
+
+    if match["score_home"] < match["score_away"]:
+        return resolve_team_name(match["away"])
+
+    return None
+
+def get_best_third_team_by_group(group_name):
+    qualified_thirds, eliminated_thirds = get_best_third_placed_teams()
+
+    for team in qualified_thirds:
+        if team.get("group") == group_name:
+            return team["name"]
+
+    return None
+
+def resolve_team_name(team_name):
+    """
+    Tu doi cac placeholder thanh ten doi that khi da co du lieu.
+
+    Vi du:
+    - Nhat bang A -> Mexico
+    - Nhi bang B -> Switzerland
+    - Thang tran 73 -> Mexico
+    """
+
+    if not team_name:
+        return team_name
+
+    text = team_name.strip()
+
+    # Nhat bang A
+    if text.startswith("Nhất bảng "):
+        group_name = text.replace("Nhất bảng ", "").strip()
+        resolved = get_group_rank_team(group_name, 1)
+        return resolved or team_name
+
+    # Nhi bang A
+    if text.startswith("Nhì bảng "):
+        group_name = text.replace("Nhì bảng ", "").strip()
+        resolved = get_group_rank_team(group_name, 2)
+        return resolved or team_name
+
+    # Thang tran 73
+    if text.startswith("Thắng trận "):
+        raw = text.replace("Thắng trận ", "").strip()
+
+        try:
+            match_no = int(raw)
+        except ValueError:
+            return team_name
+
+        resolved = get_match_winner(match_no)
+        return resolved or team_name
+    
+    # Hạng 3 bảng A
+    if text.startswith("Hạng 3 bảng "):
+        group_name = text.replace("Hạng 3 bảng ", "").strip()
+        resolved = get_best_third_team_by_group(group_name)
+        return resolved or team_name
+
+    # Hạng ba bảng A
+    if text.startswith("Hạng ba bảng "):
+        group_name = text.replace("Hạng ba bảng ", "").strip()
+        resolved = get_best_third_team_by_group(group_name)
+        return resolved or team_name    
+        # Đội hạng 3 tốt nhất 1
+    if text.startswith("Đội hạng 3 tốt nhất "):
+        raw = text.replace("Đội hạng 3 tốt nhất ", "").strip()
+
+        try:
+            index = int(raw) - 1
+        except ValueError:
+            return team_name
+
+        qualified_thirds, eliminated_thirds = get_best_third_placed_teams()
+
+        if 0 <= index < len(qualified_thirds):
+            return qualified_thirds[index]["name"]
+
+        return team_name
+    
+        # Ví dụ: Hạng 3 tốt nhất A/B/C/D/F
+    if text.startswith("Hạng 3 tốt nhất "):
+        raw_groups = text.replace("Hạng 3 tốt nhất ", "").strip()
+        group_options = [g.strip() for g in raw_groups.split("/") if g.strip()]
+
+        resolved = get_best_third_team_from_groups(group_options)
+        return resolved or team_name
+
+    return team_name
+
+
+def enrich_match_display_names(match):
+    """
+    Them ten hien thi cho match, khong sua du lieu goc trong DB.
+    """
+    match["home_display"] = resolve_team_name(match.get("home"))
+    match["away_display"] = resolve_team_name(match.get("away"))
+
+    return match
 
 @app.context_processor
 def utility_processor():
@@ -665,7 +1098,7 @@ def prediction():
             match_no = match["match_no"]
             predicted_result = request.form.get(f"match_{match_no}")
 
-            if predicted_result in ["home", "away"]:
+            if predicted_result in ["home", "draw", "away"]:
                 conn.execute("""
                     INSERT INTO predictions (
                         user_id,
@@ -698,8 +1131,10 @@ def prediction():
     }
 
     for match in fixtures:
+        enrich_match_display_names(match)
         match["locked"] = is_match_locked(match)
         match["handicap_text"] = get_handicap_text(match)
+        match["beer_points"] = get_stage_points(match["stage"])
 
     return render_template(
         "du_doan.html",
@@ -715,64 +1150,118 @@ def prediction_history():
 
     fixtures = get_matches()
     user_id = session["user_id"]
+    is_admin = session.get("role") == "admin"
+
+    search_username = request.args.get("username", "").strip()
+
+    fixture_lookup = {
+        match["match_no"]: match
+        for match in fixtures
+    }
 
     conn = get_db()
-    rows = conn.execute(
-        "SELECT match_no, predicted_result FROM predictions WHERE user_id = ?",
-        (user_id,)
-    ).fetchall()
+
+    if is_admin:
+        if search_username:
+            users = conn.execute("""
+                SELECT id, username
+                FROM users
+                WHERE username LIKE ?
+                ORDER BY username
+            """, (f"%{search_username}%",)).fetchall()
+        else:
+            users = conn.execute("""
+                SELECT id, username
+                FROM users
+                ORDER BY username
+            """).fetchall()
+    else:
+        users = conn.execute("""
+            SELECT id, username
+            FROM users
+            WHERE id = ?
+        """, (user_id,)).fetchall()
+
+    prediction_rows = conn.execute("""
+        SELECT user_id, match_no, predicted_result
+        FROM predictions
+    """).fetchall()
+
     conn.close()
 
-    predictions = {
-        row["match_no"]: row["predicted_result"]
-        for row in rows
-    }
+    predictions = {}
+
+    for row in prediction_rows:
+        predictions[(row["user_id"], row["match_no"])] = row["predicted_result"]
 
     history = []
     total_beer = 0
 
-    for match in fixtures:
-        match_no = match["match_no"]
+    for user in users:
+        for match in fixtures:
+            match_no = match["match_no"]
+            predicted_result = predictions.get((user["id"], match_no))
 
-        if match_no not in predictions:
-            continue
+            enrich_match_display_names(match)
+            match["handicap_text"] = get_handicap_text(match)
 
-        match["handicap_text"] = get_handicap_text(match)
-        handicap_result = get_handicap_result(match)
+            handicap_result = get_handicap_result(match)
 
-        if handicap_result is None:
-            status = "Chưa có kết quả"
-            beer = 0
-        elif handicap_result == "push":
-            status = "Hòa kèo"
-            beer = 0
-        elif predictions[match_no] == handicap_result:
-            status = "Đúng"
-            beer = 0
-        else:
-            status = "Sai"
-            beer = get_stage_points(match["stage"])
-            total_beer += beer
+            # Trận chưa có tỷ số:
+            # - nếu user chưa dự đoán thì không cần hiện
+            # - nếu user đã dự đoán thì hiện là chờ kết quả
+            if handicap_result is None:
+                if not predicted_result:
+                    continue
 
-        history.append({
-            "match": match,
-            "prediction": predictions[match_no],
-            "handicap_result": handicap_result,
-            "status": status,
-            "beer": beer
-        })
+                status = "Chưa có kết quả"
+                beer = 0
+
+            # Trận đã có kết quả nhưng user không dự đoán
+            elif not predicted_result:
+                status = "Không dự đoán"
+                beer = get_stage_points(match["stage"])
+                total_beer += beer
+
+            # User dự đoán đúng, bao gồm cả draw
+            elif predicted_result == handicap_result:
+                status = "Đúng"
+                beer = 0
+
+            # User dự đoán sai
+            else:
+                status = "Sai"
+                beer = get_stage_points(match["stage"])
+                total_beer += beer
+
+            history.append({
+                "username": user["username"],
+                "match": match,
+                "prediction": predicted_result,
+                "handicap_result": handicap_result,
+                "status": status,
+                "beer": beer
+            })
 
     return render_template(
         "lich_su_du_doan.html",
         history=history,
-        total_beer=total_beer
+        total_beer=total_beer,
+        search_username=search_username
     )
 
 
 @app.route("/bang-xep-hang")
 def standings():
     groups = calculate_standings()
-    return render_template("bang_xep_hang.html", groups=groups)
+    qualified_thirds, eliminated_thirds = get_best_third_placed_teams()
+
+    return render_template(
+        "bang_xep_hang.html",
+        groups=groups,
+        qualified_thirds=qualified_thirds,
+        eliminated_thirds=eliminated_thirds
+    )
 
 
 @app.route("/lich-thi-dau")
@@ -780,7 +1269,9 @@ def fixtures():
     fixtures = get_matches()
 
     for match in fixtures:
+        enrich_match_display_names(match)
         match["handicap_text"] = get_handicap_text(match)
+        match["beer_points"] = get_stage_points(match["stage"])
 
     return render_template("lich_thi_dau.html", fixtures=fixtures)
 
@@ -923,7 +1414,9 @@ def admin_matches():
     matches = get_matches()
 
     for match in matches:
+        enrich_match_display_names(match)
         match["handicap_text"] = get_handicap_text(match)
+        match["beer_points"] = get_stage_points(match["stage"])
 
     return render_template("admin_matches.html", matches=matches)
 
@@ -951,7 +1444,10 @@ def update_match(match_no):
     conn.execute("""
         UPDATE matches
         SET
+            match_date = ?,
             time_vn = ?,
+            home = ?,
+            away = ?,
             score_home = ?,
             score_away = ?,
             handicap_team = ?,
@@ -959,7 +1455,10 @@ def update_match(match_no):
             updated_at = CURRENT_TIMESTAMP
         WHERE match_no = ?
     """, (
+        request.form.get("match_date") or None,
         request.form.get("time_vn") or None,
+        request.form.get("home") or "",
+        request.form.get("away") or "",
         score_home,
         score_away,
         handicap_team,
@@ -985,7 +1484,35 @@ def backup_db():
         as_attachment=True,
         download_name="nuoibeer_database_backup.db"
     )
+@app.route("/admin/restore", methods=["GET", "POST"])
+def restore_db():
+    if not admin_required():
+        return redirect("/login")
 
+    message = ""
+
+    if request.method == "POST":
+        backup_file = request.files.get("backup_file")
+
+        if not backup_file or backup_file.filename == "":
+            message = "Chưa chọn file backup."
+            return render_template("restore_db.html", message=message)
+
+        if not backup_file.filename.endswith(".db"):
+            message = "File backup phải có đuôi .db."
+            return render_template("restore_db.html", message=message)
+
+        # Backup database hiện tại trước khi restore
+        if DB_NAME.exists():
+            safety_backup = BASE_DIR / "database_before_restore.db"
+            shutil.copy(DB_NAME, safety_backup)
+
+        # Ghi đè database.db bằng file backup upload
+        backup_file.save(DB_NAME)
+
+        message = "Restore thành công. Anh hãy restart app để chắc chắn dữ liệu mới được nạp."
+
+    return render_template("restore_db.html", message=message)
 
 init_db()
 seed_matches_from_json()

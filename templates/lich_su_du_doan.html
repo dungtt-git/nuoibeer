@@ -3,7 +3,30 @@
 {% block title %}Lịch sử dự đoán{% endblock %}
 
 {% block content %}
+{% if session.get("role") == "admin" %}
+<form method="get" class="row g-2 mb-4">
+  <div class="col-md-5">
+    <input
+      type="text"
+      name="username"
+      class="form-control rounded-pill"
+      placeholder="🔍 Tìm theo tên người chơi..."
+      value="{{ search_username or '' }}">
+  </div>
 
+  <div class="col-md-auto">
+    <button class="btn btn-primary rounded-pill px-4">
+      Tìm
+    </button>
+  </div>
+
+  <div class="col-md-auto">
+    <a href="/lich-su-du-doan" class="btn btn-outline-secondary rounded-pill px-4">
+      Xóa lọc
+    </a>
+  </div>
+</form>
+{% endif %}
 <div class="container-fluid py-3 px-3" style="max-width: 1400px; margin: 0 auto;">
 
   <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3 p-3 rounded-3" style="background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); border-left: 5px solid #64748b;">
@@ -24,7 +47,7 @@
           {{ "{:,.0f}".format(total_beer) }} 🍺
         </div>
         <div class="small text-white-50 fw-medium" style="font-size: 0.75rem;">
-          Mỗi dự đoán sai mời mua 10🍺.
+          Mỗi dự đoán sai mời 🍺.
         </div>
       </div>
     </div>
@@ -42,7 +65,14 @@
             <th class="text-center" style="width: 60px;">Trận</th>
             <th>Cặp đấu</th>
             <th style="width: 90px;">Kèo</th>
+            {% if session.get("role") == "admin" %}
+              <th>Người chơi</th>
+            {% endif %}
+
             <th>Dự đoán của bạn</th>
+            
+
+            
             <th class="text-center" style="width: 100px;">Tỷ số thật</th>
             <th class="text-center" style="width: 130px;">Trạng thái</th>
             <th class="text-end" style="width: 140px;">🍺</th>
@@ -67,12 +97,19 @@
                 {{ item.match.handicap_text }}
               </span>
             </td>
+            {% if session.get("role") == "admin" %}
+              <td class="fw-semibold">👤 {{ item.username }}</td>
+            {% endif %}
+
 
             <td class="fw-semibold text-secondary">
               {% if item.prediction == "home" %}
-                🔥 {{ item.match.home }} thắng kèo
+                {{ item.match.home_display or item.match.home }} thắng kèo
               {% elif item.prediction == "away" %}
-                🔥 {{ item.match.away }} thắng kèo
+                {{ item.match.away_display or item.match.away }} thắng kèo
+              {% elif item.prediction == "draw" %} Hòa kèo
+              {% else %}
+                <span class="text-danger fw-semibold">Không dự đoán</span>
               {% endif %}
             </td>
 
@@ -88,12 +125,14 @@
 
             <td class="text-center">
               {% if item.status == "Đúng" %}
-                <span class="badge bg-success fw-bold px-2.5 py-1 shadow-sm" style="font-size: 0.75rem;">✔️ Đúng</span>
+                <span class="badge bg-success fw-bold px-2.5 py-1 shadow-sm" style="font-size: 0.75rem;">✔️ Ăn may nhé</span>
               {% elif item.status == "Sai" %}
-                <span class="badge bg-danger fw-bold px-2.5 py-1 shadow-sm" style="font-size: 0.75rem;">❌ Sai</span>
+                <span class="badge bg-danger fw-bold px-2.5 py-1 shadow-sm" style="font-size: 0.75rem;">❌ 🍺 Nuôi team</span>
               {% elif item.status == "Hòa kèo" %}
                 <span class="badge bg-info text-dark fw-bold px-2.5 py-1 shadow-sm" style="font-size: 0.75rem;">🤝 Hòa kèo</span>
-              {% else %}
+              {% elif item.status == "Không dự đoán" %}
+                <span class="badge rounded-pill text-bg-warning px-3">Không dự đoán</span>
+                {% else %}
                 <span class="badge bg-secondary fw-bold px-2.5 py-1 shadow-sm" style="font-size: 0.75rem;">⏳ Chờ KQ</span>
               {% endif %}
             </td>

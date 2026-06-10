@@ -67,7 +67,7 @@
               </div>
             </td>
 
-            <td class="fw-bold text-end text-dark fs-6">{{ match.home }}</td>
+            <td class="fw-bold text-end text-dark fs-6">{{ match.home_display or match.home }}</td>
 
             <td class="text-center">
               {% if match.score_home is not none and match.score_away is not none %}
@@ -79,7 +79,7 @@
               {% endif %}
             </td>
 
-            <td class="fw-bold text-dark fs-6">{{ match.away }}</td>
+            <td class="fw-bold text-dark fs-6">{{ match.away_display or match.away }}</td>
 
             <td class="text-center">
               {% if match.handicap_text %}
