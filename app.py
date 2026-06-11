@@ -1541,6 +1541,29 @@ seed_teams_from_json()
 seed_stage_points()
 create_default_admin()
 
+@app.route("/test-db")
+def test_db():
+    import os
+    import psycopg2
+
+    database_url = os.environ.get("DATABASE_URL")
+
+    if not database_url:
+        return "Chưa có DATABASE_URL"
+
+    try:
+        conn = psycopg2.connect(database_url, connect_timeout=20)
+        cur = conn.cursor()
+        cur.execute("SELECT now();")
+        result = cur.fetchone()
+
+        cur.close()
+        conn.close()
+
+        return f"Kết nối Neon OK: {result[0]}"
+
+    except Exception as e:
+        return f"Lỗi kết nối DB: {e}"
 
 if __name__ == "__main__":
     app.run(debug=True)
