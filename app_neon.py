@@ -1,4 +1,5 @@
 import json
+import os
 import sqlite3
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -8,16 +9,66 @@ from flask import Flask, render_template, request, redirect, session, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 import shutil
 
+try:
+    import psycopg2
+    import psycopg2.extras
+except ImportError:
+    psycopg2 = None
+
 app = Flask(__name__)
 app.secret_key = "nuoibeer_secret_key_2026"
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_NAME = BASE_DIR / "database.db"
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+USE_POSTGRES = bool(DATABASE_URL)
+DB_NAME = Path(os.getenv("DB_PATH", BASE_DIR / "database.db"))
 FIXTURES_FILE = BASE_DIR / "data" / "fixtures.json"
 GROUPS_FILE = BASE_DIR / "data" / "groups.json"
 
 
+class PostgresConnection:
+    def __init__(self, database_url):
+        if psycopg2 is None:
+            raise RuntimeError("psycopg2-binary chưa được cài. Hãy thêm psycopg2-binary vào requirements.txt")
+
+        self.conn = psycopg2.connect(
+            database_url,
+            cursor_factory=psycopg2.extras.RealDictCursor,
+            connect_timeout=20
+        )
+
+    def _convert_sql(self, sql):
+        sql = sql.replace("?", "%s")
+        sql = sql.replace("INSERT OR IGNORE INTO", "INSERT INTO")
+        return sql
+
+    def execute(self, sql, params=None):
+        sql = self._convert_sql(sql)
+
+        if "INSERT INTO teams" in sql and "ON CONFLICT" not in sql:
+            sql = sql.rstrip().rstrip(";") + " ON CONFLICT (name) DO NOTHING"
+
+        if "INSERT INTO stage_points" in sql and "ON CONFLICT" not in sql:
+            sql = sql.rstrip().rstrip(";") + " ON CONFLICT (stage) DO NOTHING"
+
+        cur = self.conn.cursor()
+        cur.execute(sql, params or ())
+        return cur
+
+    def commit(self):
+        self.conn.commit()
+
+    def rollback(self):
+        self.conn.rollback()
+
+    def close(self):
+        self.conn.close()
+
+
 def get_db():
+    if USE_POSTGRES:
+        return PostgresConnection(DATABASE_URL)
+
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     return conn
@@ -25,6 +76,83 @@ def get_db():
 
 def init_db():
     conn = get_db()
+
+    if USE_POSTGRES:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                role TEXT DEFAULT 'user',
+                is_active INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS predictions (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                match_no INTEGER NOT NULL,
+                predicted_result TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, match_no)
+            )
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS matches (
+                id SERIAL PRIMARY KEY,
+                match_no INTEGER UNIQUE NOT NULL,
+                match_date TEXT,
+                time_vn TEXT,
+                stage TEXT,
+                group_name TEXT,
+                home TEXT NOT NULL,
+                away TEXT NOT NULL,
+                stadium TEXT,
+                city TEXT,
+                score_home INTEGER,
+                score_away INTEGER,
+                handicap_team TEXT,
+                handicap_value REAL DEFAULT 0,
+                note TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS teams (
+                id SERIAL PRIMARY KEY,
+                group_name TEXT NOT NULL,
+                name TEXT UNIQUE NOT NULL
+            )
+        """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS stage_points (
+                id SERIAL PRIMARY KEY,
+                stage TEXT UNIQUE NOT NULL,
+                beer_points INTEGER NOT NULL DEFAULT 10
+            )
+        """)
+
+        migrations = [
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user'",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active INTEGER DEFAULT 1",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+            "ALTER TABLE predictions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+            "ALTER TABLE matches ADD COLUMN IF NOT EXISTS handicap_team TEXT",
+            "ALTER TABLE matches ADD COLUMN IF NOT EXISTS handicap_value REAL DEFAULT 0",
+        ]
+
+        for sql in migrations:
+            conn.execute(sql)
+
+        conn.commit()
+        conn.close()
+        return
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -1025,7 +1153,11 @@ def register():
                 VALUES (?, ?, ?, ?)
             """, (username, generate_password_hash(password), "user", 1))
             conn.commit()
-        except sqlite3.IntegrityError:
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
             conn.close()
             return "Tên đăng nhập đã tồn tại"
 
@@ -1497,6 +1629,9 @@ def backup_db():
     if not admin_required():
         return redirect("/login")
 
+    if USE_POSTGRES:
+        return "App đang dùng PostgreSQL Neon. Backup file .db chỉ dùng cho SQLite local."
+
     if not DB_NAME.exists():
         return "Chưa có database.db"
 
@@ -1509,6 +1644,12 @@ def backup_db():
 def restore_db():
     if not admin_required():
         return redirect("/login")
+
+    if USE_POSTGRES:
+        return render_template(
+            "restore_db.html",
+            message="App đang dùng PostgreSQL Neon. Restore file .db chỉ dùng cho SQLite local."
+        )
 
     message = ""
 
@@ -1523,12 +1664,10 @@ def restore_db():
             message = "File backup phải có đuôi .db."
             return render_template("restore_db.html", message=message)
 
-        # Backup database hiện tại trước khi restore
         if DB_NAME.exists():
             safety_backup = BASE_DIR / "database_before_restore.db"
             shutil.copy(DB_NAME, safety_backup)
 
-        # Ghi đè database.db bằng file backup upload
         backup_file.save(DB_NAME)
 
         message = "Restore thành công. Anh hãy restart app để chắc chắn dữ liệu mới được nạp."
@@ -1541,29 +1680,15 @@ seed_teams_from_json()
 seed_stage_points()
 create_default_admin()
 
-@app.route("/test-db")
-def test_db():
+@app.route("/db-info")
+def db_info():
     import os
-    import psycopg2
 
-    database_url = os.environ.get("DATABASE_URL")
-
-    if not database_url:
-        return "Chưa có DATABASE_URL"
-
-    try:
-        conn = psycopg2.connect(database_url, connect_timeout=20)
-        cur = conn.cursor()
-        cur.execute("SELECT now();")
-        result = cur.fetchone()
-
-        cur.close()
-        conn.close()
-
-        return f"Kết nối Neon OK: {result[0]}"
-
-    except Exception as e:
-        return f"Lỗi kết nối DB: {e}"
+    return {
+        "USE_POSTGRES": USE_POSTGRES,
+        "DATABASE_URL_EXISTS": bool(os.environ.get("DATABASE_URL")),
+        "DB_NAME": str(DB_NAME)
+    }
 
 if __name__ == "__main__":
     app.run(debug=True)
