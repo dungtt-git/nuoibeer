@@ -1406,6 +1406,7 @@ def toggle_user(user_id):
 
 @app.route("/admin/users/<int:user_id>/delete", methods=["POST"])
 def delete_user(user_id):
+
     if not admin_required():
         return redirect("/login")
 
@@ -1413,7 +1414,13 @@ def delete_user(user_id):
         return redirect("/admin/users")
 
     conn = get_db()
-    conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+
+    conn.execute("""
+        UPDATE users
+        SET is_active = 0
+        WHERE id = ?
+    """, (user_id,))
+
     conn.commit()
     conn.close()
 
