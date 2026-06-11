@@ -238,7 +238,7 @@ def create_default_admin():
             VALUES (?, ?, ?, ?)
         """, (
             "admin",
-            generate_password_hash("admin123"),
+            generate_password_hash("PQO4WMly5P8Z"),
             "admin",
             1
         ))
