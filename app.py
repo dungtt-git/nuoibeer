@@ -722,6 +722,7 @@ def get_summary_data():
         SELECT id, username
         FROM users
         WHERE is_active = 1
+        AND role <> 'admin' 
         ORDER BY username
     """).fetchall()
 
@@ -1181,12 +1182,16 @@ def prediction_history():
                 SELECT id, username
                 FROM users
                 WHERE username LIKE ?
+                AND is_active = 1
+                AND role <> 'admin'
                 ORDER BY username
             """, (f"%{search_username}%",)).fetchall()
         else:
             users = conn.execute("""
                 SELECT id, username
                 FROM users
+                 WHERE is_active = 1
+                AND role <> 'admin'
                 ORDER BY username
             """).fetchall()
     else:
@@ -1194,6 +1199,7 @@ def prediction_history():
             SELECT id, username
             FROM users
             WHERE id = ?
+            AND is_active = 1
         """, (user_id,)).fetchall()
 
     prediction_rows = conn.execute("""
