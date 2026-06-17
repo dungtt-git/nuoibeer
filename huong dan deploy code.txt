@@ -1,0 +1,24 @@
+LOCAL DEV MACHINE:
+1. git status
+2. git add . hoặc git add app.py
+3. git commit -m "fix ..."
+4. git push
+
+GOOGLE CLOUD MACHINE:
+I. Connect Project 
+1. List danh sách các dự án của GC
+   	gcloud projects list
+2. connect vào dự án cần deploy source
+   	gcloud config set project project-1f507d00-9c60-41b0-b46 
+3. connect đúng tên
+	gcloud compute ssh nuoibeer --zone asia-southeast1-b 
+4. cd vào thư mục dự án
+	cd ~/nuoibeer
+5. Check file modified so sánh giữa VM và GIT
+	git status
+6. Backup db nếu cần:
+	cp database.db ~/database_backup_202606120850.db
+7. Kéo code từ GIT về VM
+	git pull	
+8. sudo systemctl restart nuoibeer
+9. sudo systemctl status nuoibeer
