@@ -1168,6 +1168,7 @@ def prediction_history():
     is_admin = session.get("role") == "admin"
 
     search_username = request.args.get("username", "").strip()
+    search_match_no = request.args.get("match_no", "").strip()
 
     fixture_lookup = {
         match["match_no"]: match
