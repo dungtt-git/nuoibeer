@@ -1498,6 +1498,125 @@ def update_match(match_no):
 
     return redirect("/admin/matches")
 
+@app.route("/lich-su-theo-tran")
+def prediction_history_by_match():
+    if not admin_required():
+        return redirect("/login")
+
+    fixtures = get_matches()
+
+    search_date = request.args.get("match_date", "").strip()
+    search_match_no = request.args.get("match_no", "").strip()
+
+    selected_match_no = None
+    if search_match_no:
+        try:
+            selected_match_no = int(search_match_no)
+        except ValueError:
+            selected_match_no = None
+
+    conn = get_db()
+
+    users = conn.execute("""
+        SELECT id, username
+        FROM users
+        WHERE is_active = 1
+          AND role <> 'admin'
+        ORDER BY username
+    """).fetchall()
+
+    prediction_rows = conn.execute("""
+        SELECT user_id, match_no, predicted_result
+        FROM predictions
+    """).fetchall()
+
+    conn.close()
+
+    predictions = {
+        (row["user_id"], row["match_no"]): row["predicted_result"]
+        for row in prediction_rows
+    }
+
+    match_history = []
+
+    for match in fixtures:
+        if search_date and match["date"] != search_date:
+            continue
+
+        if selected_match_no and match["match_no"] != selected_match_no:
+            continue
+
+        enrich_match_display_names(match)
+        match["handicap_text"] = get_handicap_text(match)
+
+        handicap_result = get_handicap_result(match)
+
+        stats = {
+            "home": 0,
+            "draw": 0,
+            "away": 0,
+            "none": 0,
+            "correct": 0,
+            "wrong": 0,
+            "beer": 0,
+        }
+
+        players = []
+
+        for user in users:
+            predicted_result = predictions.get((user["id"], match["match_no"]))
+
+            if predicted_result in ["home", "draw", "away"]:
+                stats[predicted_result] += 1
+            else:
+                stats["none"] += 1
+
+            if handicap_result is None:
+                status = "Chưa có kết quả" if predicted_result else "Chưa dự đoán"
+                beer = 0
+            elif not predicted_result:
+                status = "Không dự đoán"
+                beer = get_stage_points(match["stage"])
+                stats["wrong"] += 1
+                stats["beer"] += beer
+            elif predicted_result == handicap_result:
+                status = "Đúng"
+                beer = 0
+                stats["correct"] += 1
+            else:
+                status = "Sai"
+                beer = get_stage_points(match["stage"])
+                stats["wrong"] += 1
+                stats["beer"] += beer
+
+            players.append({
+                "username": user["username"],
+                "prediction": predicted_result,
+                "status": status,
+                "beer": beer
+            })
+
+        match_history.append({
+            "match": match,
+            "handicap_result": handicap_result,
+            "stats": stats,
+            "players": players
+        })
+
+    match_dates = sorted({
+        match["date"]
+        for match in fixtures
+        if match.get("date")
+    })
+
+    return render_template(
+        "lich_su_theo_tran.html",
+        match_history=match_history,
+        fixtures=fixtures,
+        match_dates=match_dates,
+        search_date=search_date,
+        search_match_no=search_match_no
+    )
 
 @app.route("/admin/backup")
 def backup_db():
