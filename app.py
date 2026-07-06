@@ -858,7 +858,7 @@ def get_summary_data():
                 item["accuracy"],
                 item["correct"]
             ),
-            reverse=True
+            reverse=False
         )
     return summary_list
 
