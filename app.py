@@ -17,12 +17,12 @@ FIXTURES_FILE = BASE_DIR / "data" / "fixtures.json"
 GROUPS_FILE = BASE_DIR / "data" / "groups.json"
 #sửa code để loại beer vòng bảng nếu muốn, mặc định là False để tính beer vòng bảng
 #-- start
-COUNT_GROUP_STAGE = False
-def should_count_beer(match):
-    if COUNT_GROUP_STAGE:
-        return True
-
-    return match["stage"] != "Vòng bảng"
+#COUNT_GROUP_STAGE = False
+#def should_count_beer(match):
+#    if COUNT_GROUP_STAGE:
+#        return True
+#
+#    return match["stage"] != "Vòng bảng"
 # End
 
 def get_db():
@@ -109,6 +109,14 @@ def init_db():
         except sqlite3.OperationalError:
             pass
 
+    try:
+        conn.execute("""
+            ALTER TABLE stage_points
+            ADD COLUMN count_beer INTEGER DEFAULT 1
+        """)
+    except sqlite3.OperationalError:
+        pass
+
     conn.commit()
     conn.close()
 
@@ -116,20 +124,24 @@ def seed_stage_points():
     conn = get_db()
 
     defaults = {
-        "Vòng bảng": 10,
-        "Vòng 32 đội": 15,
-        "Vòng 16 đội": 20,
-        "Tứ kết": 30,
-        "Bán kết": 40,
-        "Tranh hạng ba": 40,
-        "Chung kết": 50,
+        "Vòng bảng": (10, 0),
+        "Vòng 32 đội": (15, 1),
+        "Vòng 16 đội": (20, 1),
+        "Tứ kết": (30, 1),
+        "Bán kết": (40, 1),
+        "Tranh hạng ba": (40, 1),
+        "Chung kết": (50, 1),
     }
 
-    for stage, beer_points in defaults.items():
+    for stage, (beer_points, count_beer) in defaults.items():
         conn.execute("""
-            INSERT OR IGNORE INTO stage_points (stage, beer_points)
-            VALUES (?, ?)
-        """, (stage, beer_points))
+            INSERT OR IGNORE INTO stage_points (
+                stage,
+                beer_points,
+                count_beer
+            )
+            VALUES (?, ?, ?)
+        """, (stage, beer_points, count_beer))
 
     conn.commit()
     conn.close()
@@ -138,18 +150,27 @@ def seed_stage_points():
 
 def get_stage_points(stage):
     conn = get_db()
+    row = conn.execute("""
+        SELECT beer_points
+        FROM stage_points
+        WHERE stage = ?
+    """, (stage,)).fetchone()
+    conn.close()
 
-    row = conn.execute(
-        "SELECT beer_points FROM stage_points WHERE stage = ?",
-        (stage,)
-    ).fetchone()
+    return row["beer_points"] if row else 0
+
+def should_count_beer(match):
+    conn = get_db()
+
+    row = conn.execute("""
+        SELECT count_beer
+        FROM stage_points
+        WHERE stage = ?
+    """, (match["stage"],)).fetchone()
 
     conn.close()
 
-    if row:
-        return row["beer_points"]
-
-    return 10
+    return bool(row and row["count_beer"] == 1)
 
 def load_fixtures_json():
     with open(FIXTURES_FILE, "r", encoding="utf-8") as f:
@@ -1362,25 +1383,33 @@ def admin_stage_points():
     conn = get_db()
 
     if request.method == "POST":
-        rows = conn.execute("SELECT stage FROM stage_points").fetchall()
+        rows = conn.execute("""
+            SELECT stage
+            FROM stage_points
+            ORDER BY id
+        """).fetchall()
 
         for row in rows:
             stage = row["stage"]
-            value = request.form.get(stage)
+            beer_points = int(request.form.get(f"beer_points_{stage}", 0))
+            count_beer = 1 if request.form.get(f"count_beer_{stage}") == "on" else 0
 
-            if value is not None and value.strip() != "":
-                conn.execute("""
-                    UPDATE stage_points
-                    SET beer_points = ?
-                    WHERE stage = ?
-                """, (int(value), stage))
+            conn.execute("""
+                UPDATE stage_points
+                SET beer_points = ?,
+                    count_beer = ?
+                WHERE stage = ?
+            """, (beer_points, count_beer, stage))
 
         conn.commit()
+        conn.close()
+
+        return redirect("/admin/stage-points")
 
     stage_points = conn.execute("""
-        SELECT stage, beer_points
+        SELECT stage, beer_points, count_beer
         FROM stage_points
-        ORDER BY id ASC
+        ORDER BY id
     """).fetchall()
 
     conn.close()
