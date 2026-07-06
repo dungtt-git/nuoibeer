@@ -15,7 +15,15 @@ BASE_DIR = Path(__file__).resolve().parent
 DB_NAME = BASE_DIR / "database.db"
 FIXTURES_FILE = BASE_DIR / "data" / "fixtures.json"
 GROUPS_FILE = BASE_DIR / "data" / "groups.json"
+#sửa code để loại beer vòng bảng nếu muốn, mặc định là False để tính beer vòng bảng
+#-- start
+COUNT_GROUP_STAGE = False
+def should_count_beer(match):
+    if COUNT_GROUP_STAGE:
+        return True
 
+    return match["stage"] != "Vòng bảng"
+# End
 
 def get_db():
     conn = sqlite3.connect(DB_NAME)
@@ -779,11 +787,13 @@ def get_summary_data():
                     item["correct"] += 1
                 elif predicted_result in ["home", "away"]:
                     item["wrong"] += 1
-                    item["total_beer"] += get_stage_points(match["stage"])
+                    if should_count_beer(match):
+                        item["total_beer"] += get_stage_points(match["stage"])
                 else:
                     item["missed"] += 1
                     item["wrong"] += 1
-                    item["total_beer"] += get_stage_points(match["stage"])
+                    if should_count_beer(match):
+                        item["total_beer"] += get_stage_points(match["stage"])
 
                 item["push"] += 1
                 continue
@@ -793,14 +803,17 @@ def get_summary_data():
                 item["counted_matches"] += 1
                 item["missed"] += 1
                 item["wrong"] += 1
-                item["total_beer"] += get_stage_points(match["stage"])
+                if should_count_beer(match):
+                    item["total_beer"] += get_stage_points(match["stage"])
                 continue
 
             # User chọn hòa nhưng thực tế không hòa kèo
             if predicted_result == "draw":
                 item["counted_matches"] += 1
                 item["wrong"] += 1
-                item["total_beer"] += get_stage_points(match["stage"])
+                if should_count_beer(match):
+                    item["total_beer"] += get_stage_points(match["stage"])
+                    #item["total_beer"] += get_stage_points(match["stage"])
                 continue
 
             # User chọn đúng đội thắng kèo
@@ -810,13 +823,22 @@ def get_summary_data():
                 item["correct"] += 1
             else:
                 item["wrong"] += 1
-                item["total_beer"] += get_stage_points(match["stage"])
+                if should_count_beer(match):
+                    item["total_beer"] += get_stage_points(match["stage"])
 
         counted = item["correct"] + item["wrong"]
         item["accuracy"] = round(item["correct"] * 100 / counted, 1) if counted > 0 else 0
 
         summary_list.append(item)
-
+        
+        summary_list.sort(
+            key=lambda item: (
+                item["total_beer"],
+                item["accuracy"],
+                item["correct"]
+            ),
+            reverse=True
+        )
     return summary_list
 
 def get_group_rank_team(group_name, rank):
@@ -1241,8 +1263,11 @@ def prediction_history():
             # Trận đã có kết quả nhưng user không dự đoán
             elif not predicted_result:
                 status = "Không dự đoán"
-                beer = get_stage_points(match["stage"])
-                total_beer += beer
+                if should_count_beer(match):
+                    beer = get_stage_points(match["stage"])
+                    total_beer += beer
+                else:
+                    beer = 0
 
             # User dự đoán đúng, bao gồm cả draw
             elif predicted_result == handicap_result:
@@ -1252,8 +1277,11 @@ def prediction_history():
             # User dự đoán sai
             else:
                 status = "Sai"
-                beer = get_stage_points(match["stage"])
-                total_beer += beer
+                if should_count_beer(match):
+                    beer = get_stage_points(match["stage"])
+                    total_beer += beer
+                else:
+                    beer = 0
 
             history.append({
                 "username": user["username"],
@@ -1320,7 +1348,7 @@ def leaderboard():
 
     summary_list = get_summary_data()
     summary_list.sort(
-        key=lambda item: (item["accuracy"], item["correct"], -item["total_beer"]),
+        key=lambda item: (item["total_beer"], item["accuracy"], item["correct"]),
         reverse=True
     )
 
@@ -1574,20 +1602,31 @@ def prediction_history_by_match():
             if handicap_result is None:
                 status = "Chưa có kết quả" if predicted_result else "Chưa dự đoán"
                 beer = 0
+
             elif not predicted_result:
                 status = "Không dự đoán"
-                beer = get_stage_points(match["stage"])
                 stats["wrong"] += 1
-                stats["beer"] += beer
+
+                if should_count_beer(match):
+                    beer = get_stage_points(match["stage"])
+                    stats["beer"] += beer
+                else:
+                    beer = 0
+
             elif predicted_result == handicap_result:
                 status = "Đúng"
                 beer = 0
                 stats["correct"] += 1
+
             else:
                 status = "Sai"
-                beer = get_stage_points(match["stage"])
                 stats["wrong"] += 1
-                stats["beer"] += beer
+
+                if should_count_beer(match):
+                    beer = get_stage_points(match["stage"])
+                    stats["beer"] += beer
+                else:
+                    beer = 0
 
             players.append({
                 "username": user["username"],
