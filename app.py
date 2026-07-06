@@ -1370,7 +1370,7 @@ def leaderboard():
     summary_list = get_summary_data()
     summary_list.sort(
         key=lambda item: (item["total_beer"], item["accuracy"], item["correct"]),
-        reverse=True
+        reverse=False
     )
 
     return render_template("leaderboard.html", leaderboard=summary_list)
