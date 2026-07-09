@@ -40,7 +40,7 @@
 
         <tbody>
           {% for item in leaderboard %}
-          <tr>
+          <tr class="{% if item.username == session.get('username') %}my-row{% endif %}">
             <td class="text-center fw-bold fs-6">
               {% if loop.index == 1 %}🥇
               {% elif loop.index == 2 %}🥈
@@ -127,6 +127,20 @@
   .leaderboard-table tbody tr:hover {
     background-color: #f1f5f9 !important;
   }
+
+  .my-row td{
+    background: #fffacd !important;
+    font-weight: 600;
+  }
+
+  .my-row td:first-child{
+      border-left: 5px solid #d3f801;
+  }
+
+  .my-row:hover td{
+      background: #f4f801 !important;
+  }
+
 </style>
 
 {% endblock %}
